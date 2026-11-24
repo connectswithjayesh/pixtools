@@ -13,9 +13,11 @@
  * and a bottom-sheet for settings.
  *
  * npm i jspdf jszip @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities lucide-react sonner
- * npx shadcn@latest add button badge card dialog select slider input label switch tabs tooltip
+ * npx shadcn@latest add button badge card dialog select slider input label switch tabs tooltip sonner
+ * Built for shadcn "base-nova" (Base UI primitives): uses `render` instead of `asChild`.
  * (sonner: render <Toaster /> once in your app layout to see the messages)
  */
+import { createPortal } from "react-dom"
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import type { jsPDF as JsPDF } from "jspdf"
 import { toast } from "sonner"
@@ -104,6 +106,9 @@ const ACCEPTED = "image/*"
 /* ═════════════════════════════ 2. Small helpers ═════════════════════════════ */
 
 const cx = (...c: (string | false | null | undefined)[]) => c.filter(Boolean).join(" ")
+
+/** Base UI Slider reports a number or an array of numbers. */
+const one = (v: number | readonly number[]) => (Array.isArray(v) ? v[0] : (v as number))
 
 /** SSR-safe media query (false on the server, real value in the browser). */
 function useMediaQuery(query: string) {
@@ -418,8 +423,8 @@ function Dropzone({ onFiles, compact = false }: { onFiles: (f: File[]) => void; 
             <p className="mt-1 text-sm text-muted-foreground">JPG, PNG, WEBP, GIF, BMP, SVG, AVIF — as many as you want</p>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
-            <Button size="lg" className="w-full sm:w-auto" onClick={pick}><ImagePlus /> Select images</Button>
-            <Button size="lg" variant="outline" className="w-full sm:hidden" onClick={() => camera.current?.click()}><Camera /> Take photo</Button>
+            <Button size="lg" className="h-11 w-full sm:w-auto" onClick={pick}><ImagePlus /> Select images</Button>
+            <Button size="lg" variant="outline" className="h-11 w-full sm:hidden" onClick={() => camera.current?.click()}><Camera /> Take photo</Button>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
             <span className="hidden items-center gap-1 sm:inline-flex"><ClipboardPaste className="size-3.5" /> Ctrl / ⌘ + V to paste</span>
@@ -458,15 +463,17 @@ function PagePreview({ item, settings, className }: { item: ImageItem; settings:
 function Act({ label, onClick, children, danger }: { label: string; onClick: () => void; children: React.ReactNode; danger?: boolean }) {
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          variant="secondary" size="icon" aria-label={label}
-          className={cx("size-7 bg-background/90 shadow-sm backdrop-blur", danger && "hover:bg-destructive hover:text-white")}
-          onClick={(e) => { e.stopPropagation(); onClick() }}
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          {children}
-        </Button>
+      <TooltipTrigger
+        render={
+          <Button
+            variant="secondary" size="icon-sm" aria-label={label}
+            className={cx("bg-background/90 shadow-sm backdrop-blur", danger && "hover:bg-destructive hover:text-white")}
+            onClick={(e) => { e.stopPropagation(); onClick() }}
+            onPointerDown={(e) => e.stopPropagation()}
+          />
+        }
+      >
+        {children}
       </TooltipTrigger>
       <TooltipContent>{label}</TooltipContent>
     </Tooltip>
@@ -631,6 +638,14 @@ function Board(p: {
 
 type SetSetting = <K extends keyof PdfSettings>(k: K, v: PdfSettings[K]) => void
 
+const PAGE_SIZE_LABELS: Record<PageSizeKey, string> = {
+  A4: "A4 (210 × 297 mm)", A3: "A3 (297 × 420 mm)", A5: "A5 (148 × 210 mm)",
+  Letter: "US Letter (8.5 × 11 in)", Legal: "US Legal (8.5 × 14 in)", fit: "Same as image",
+}
+const FIT_LABELS: Record<FitMode, string> = {
+  contain: "Fit to page (keep ratio)", cover: "Fill page (crop edges)", stretch: "Stretch to page", original: "Original size",
+}
+
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
@@ -687,7 +702,7 @@ function SettingsPanel({ s, set }: { s: PdfSettings; set: SetSetting }) {
 
       <TabsContent value="page" className="space-y-5">
         <Field label="Page size">
-          <Select value={s.pageSize} onValueChange={(v) => set("pageSize", v as PageSizeKey)}>
+          <Select items={PAGE_SIZE_LABELS} value={s.pageSize} onValueChange={(v) => v && set("pageSize", v as PageSizeKey)}>
             <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="A4">A4 (210 × 297 mm)</SelectItem>
@@ -720,7 +735,7 @@ function SettingsPanel({ s, set }: { s: PdfSettings; set: SetSetting }) {
           />
           {s.margin === "custom" && (
             <div className="flex items-center gap-3 pt-1">
-              <Slider value={[s.customMargin]} min={0} max={60} step={1} onValueChange={([v]) => set("customMargin", v)} />
+              <Slider value={[s.customMargin]} min={0} max={60} step={1} onValueChange={(v) => set("customMargin", one(v))} />
               <span className="w-14 text-right text-sm tabular-nums">{s.customMargin} mm</span>
             </div>
           )}
@@ -728,7 +743,7 @@ function SettingsPanel({ s, set }: { s: PdfSettings; set: SetSetting }) {
 
         {fixedPage && (
           <Field label="Image fit">
-            <Select value={s.fit} onValueChange={(v) => set("fit", v as FitMode)}>
+            <Select items={FIT_LABELS} value={s.fit} onValueChange={(v) => v && set("fit", v as FitMode)}>
               <SelectTrigger className="w-full"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="contain">Fit to page (keep ratio)</SelectItem>
@@ -767,7 +782,7 @@ function SettingsPanel({ s, set }: { s: PdfSettings; set: SetSetting }) {
         </Field>
         {s.format === "jpeg" && (
           <Field label="Quality" hint={`${s.quality}%`}>
-            <Slider value={[s.quality]} min={10} max={100} step={5} onValueChange={([v]) => set("quality", v)} />
+            <Slider value={[s.quality]} min={10} max={100} step={5} onValueChange={(v) => set("quality", one(v))} />
             <div className="flex justify-between text-xs text-muted-foreground"><span>Smallest file</span><span>Best quality</span></div>
           </Field>
         )}
@@ -818,6 +833,7 @@ export default function ImageToPdf() {
   const [pdfOpen, setPdfOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const touch = useTouch()
+  const desktop = useMediaQuery("(min-width: 1024px)")
   const itemsRef = useRef(items)
   useEffect(() => { itemsRef.current = items }, [items])
 
@@ -861,6 +877,14 @@ export default function ImageToPdf() {
     window.addEventListener("paste", onPaste)
     return () => window.removeEventListener("paste", onPaste)
   }, [addFiles])
+
+  // phones/tablets: keep the end of the page clear of the fixed bottom bar
+  useEffect(() => {
+    if (desktop || items.length === 0) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [desktop, items.length])
 
   // Free object URLs when the component unmounts
   useEffect(() => () => { itemsRef.current.forEach((i) => URL.revokeObjectURL(i.url)) }, [])
@@ -947,11 +971,11 @@ export default function ImageToPdf() {
   const busy = !!progress
 
   return (
-    <TooltipProvider delayDuration={300}>
+    <TooltipProvider delay={300}>
       {items.length === 0 && loading === 0 ? (
         <div className="mx-auto max-w-3xl"><Dropzone onFiles={addFiles} /></div>
       ) : (
-        <div className="grid gap-4 pb-28 sm:gap-6 lg:grid-cols-[1fr_360px] lg:pb-0">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_360px]">
           {/* ── Board ── */}
           <section className="min-w-0 space-y-4">
             <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
@@ -967,12 +991,12 @@ export default function ImageToPdf() {
                     <Button variant="outline" size="sm" aria-label="Rotate left" onClick={() => rotate(selIds, -1)}><RotateCcw /><span className="hidden sm:inline">Left</span></Button>
                     <Button variant="outline" size="sm" aria-label="Rotate right" onClick={() => rotate(selIds, 1)}><RotateCw /><span className="hidden sm:inline">Right</span></Button>
                     <Button variant="outline" size="sm" className="text-destructive" onClick={() => remove(selIds)}><Trash2 /> Delete</Button>
-                    <Button variant="ghost" size="icon" className="size-8" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X /></Button>
+                    <Button variant="ghost" size="icon" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X /></Button>
                   </>
                 ) : (
                   <>
-                    <Select onValueChange={sortBy} value="">
-                      <SelectTrigger className="h-8 w-[130px]"><ArrowDownUp className="size-4" /><SelectValue placeholder="Sort" /></SelectTrigger>
+                    <Select value={null} onValueChange={(v) => { if (v) sortBy(v as string) }}>
+                      <SelectTrigger size="sm" className="w-[120px]"><ArrowDownUp className="size-4" /><SelectValue placeholder="Sort" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="name-asc"><ArrowDownAZ className="size-4" /> Name A→Z</SelectItem>
                         <SelectItem value="name-desc"><ArrowUpAZ className="size-4" /> Name Z→A</SelectItem>
@@ -984,7 +1008,7 @@ export default function ImageToPdf() {
                     <Button variant="outline" size="sm" onClick={() => setSelected(new Set(items.map((i) => i.id)))}><CheckSquare /><span className="hidden min-[400px]:inline">Select all</span></Button>
                     <div className="hidden items-center gap-2 pl-1 sm:flex">
                       <ZoomIn className="size-4 text-muted-foreground" />
-                      <Slider className="w-24" value={[zoom]} min={130} max={320} step={10} onValueChange={([v]) => setZoom(v)} aria-label="Board zoom" />
+                      <Slider className="w-24" value={[zoom]} min={130} max={320} step={10} onValueChange={(v) => setZoom(one(v))} aria-label="Board zoom" />
                     </div>
                     <Button variant="ghost" size="sm" className="text-muted-foreground" aria-label="Clear all" onClick={clearAll}><Trash2 /><span className="hidden min-[400px]:inline">Clear</span></Button>
                   </>
@@ -1029,7 +1053,7 @@ export default function ImageToPdf() {
                         <p className="text-xs text-muted-foreground">{result.kind === "pdf" ? `${result.pages} pages` : `${result.pages} PDFs`} · {formatBytes(result.blob.size)}</p>
                       </div>
                     </div>
-                    <Button size="lg" className="w-full" onClick={download}><Download /> Download {result.kind === "pdf" ? "PDF" : "ZIP"}</Button>
+                    <Button size="lg" className="h-11 w-full" onClick={download}><Download /> Download {result.kind === "pdf" ? "PDF" : "ZIP"}</Button>
                     <div className="grid grid-cols-2 gap-2">
                       {result.kind === "pdf" && <Button variant="outline" onClick={openPdf}><ExternalLink /> Preview</Button>}
                       <Button variant="outline" className={result.kind === "zip" ? "col-span-2" : ""} onClick={convert}><RefreshCcw /> Rebuild</Button>
@@ -1037,7 +1061,7 @@ export default function ImageToPdf() {
                   </>
                 ) : (
                   <>
-                    <Button size="lg" className="w-full" disabled={busy || loading > 0 || !items.length} onClick={convert}>
+                    <Button size="lg" className="h-11 w-full" disabled={busy || loading > 0 || !items.length} onClick={convert}>
                       {busy ? <><Loader2 className="animate-spin" /> Converting {progress!.done}/{progress!.total}</> : <><FileText /> Convert to PDF</>}
                     </Button>
                     {busy && (
@@ -1054,8 +1078,8 @@ export default function ImageToPdf() {
         </div>
       )}
 
-      {/* ── Phone / tablet bottom bar ── */}
-      {items.length > 0 && (
+      {/* ── Phone / tablet bottom bar (portalled to <body> so the page's spacing can't shift it) ── */}
+      {items.length > 0 && createPortal(
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
           {busy && (
             <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -1063,28 +1087,29 @@ export default function ImageToPdf() {
             </div>
           )}
           <div className="mx-auto flex max-w-xl items-center gap-2">
-            <Button variant="outline" size="lg" className="shrink-0 px-3" onClick={() => setSettingsOpen(true)} aria-label="PDF settings">
+            <Button variant="outline" size="lg" className="h-11 shrink-0 px-3" onClick={() => setSettingsOpen(true)} aria-label="PDF settings">
               <SlidersHorizontal /><span className="hidden min-[380px]:inline">Settings</span>
             </Button>
             {result ? (
               <>
                 {result.kind === "pdf" && (
-                  <Button variant="outline" size="lg" className="shrink-0 px-3" onClick={openPdf} aria-label="Open PDF"><ExternalLink /></Button>
+                  <Button variant="outline" size="lg" className="h-11 shrink-0 px-3" onClick={openPdf} aria-label="Open PDF"><ExternalLink /></Button>
                 )}
-                <Button size="lg" className="min-w-0 flex-1" onClick={download}>
+                <Button size="lg" className="h-11 min-w-0 flex-1" onClick={download}>
                   <Download /><span className="truncate">Download {result.kind === "pdf" ? "PDF" : "ZIP"}</span>
                   <span className="hidden text-xs font-normal opacity-80 min-[420px]:inline">{formatBytes(result.blob.size)}</span>
                 </Button>
               </>
             ) : (
-              <Button size="lg" className="min-w-0 flex-1" disabled={busy || loading > 0} onClick={convert}>
+              <Button size="lg" className="h-11 min-w-0 flex-1" disabled={busy || loading > 0} onClick={convert}>
                 {busy
                   ? <><Loader2 className="animate-spin" /> {progress!.done}/{progress!.total}</>
                   : <><FileText /><span className="truncate">Convert {items.length} to PDF</span></>}
               </Button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Settings bottom sheet (phones / tablets) ── */}
@@ -1094,7 +1119,7 @@ export default function ImageToPdf() {
           <DialogTitle>PDF settings</DialogTitle>
           <DialogDescription className="-mt-2">Changes update the pages instantly.</DialogDescription>
           <SettingsPanel s={settings} set={set} />
-          <Button size="lg" className="w-full" onClick={() => setSettingsOpen(false)}>Done</Button>
+          <Button size="lg" className="h-11 w-full" onClick={() => setSettingsOpen(false)}>Done</Button>
         </DialogContent>
       </Dialog>
 
