@@ -444,7 +444,6 @@ function PagePreview({ item, settings, className }: { item: ImageItem; settings:
   return (
     <div className={cx("relative w-full", className)} style={{ aspectRatio: `${l.pageW} / ${l.pageH}` }}>
       <div className="absolute inset-0 overflow-hidden rounded-sm shadow-md ring-1 ring-black/10" style={{ background: settings.background }}>
-        {/* eslint-disable-next-line @next/next/no-img-element -- local data-URL thumbnail, next/image cannot optimise it */}
         <img
           src={item.thumb} alt={item.name} draggable={false}
           className={cx("absolute select-none", l.crop ? "object-cover" : "object-fill", settings.grayscale && "grayscale")}
