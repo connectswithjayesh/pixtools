@@ -2,13 +2,14 @@
 /**
  * Line Break Remover — the whole tool in one file (UI, logic and helpers). Runs entirely in the browser.
  */
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { ArrowUp, ClipboardPaste, Copy, Download, Eraser, Sparkles, Upload } from "lucide-react"
+import { ArrowUp, ClipboardPaste, Copy, Download, Eraser, Sparkles, Upload, SlidersHorizontal } from "lucide-react"
 import { usePathname } from "next/navigation"
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
+import { useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
 
 /* ─── helpers (from components/common/form.tsx) ─── */
@@ -44,15 +45,82 @@ function Segmented<T extends string>({ value, onChange, options, className }: {
   )
 }
 
-/** Simple two-column tool layout: work area + settings sidebar. */
-function ToolGrid({ main, side }: { main: React.ReactNode; side: React.ReactNode }) {
+/**
+ * Tool layout. Desktop: work area + settings sidebar.
+ * Phone/tablet: the main action sits in a bar fixed to the bottom of the screen, and the settings open
+ * in a bottom sheet (mobile="sheet") or stay below the work area (mobile="inline").
+ */
+function ToolGrid({ main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
+  main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
+}) {
+  const desktop = useSyncExternalStore(
+    (cb) => { const m = window.matchMedia("(min-width: 1024px)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb) },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
+  )
+  const [open, setOpen] = useState(false)
+  const sheet = !desktop && mobile === "sheet"
+  const bar = !desktop && (sheet || !!action)
+
+  // keep the end of the page clear of the fixed bar
+  useEffect(() => {
+    if (!bar) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [bar])
+  // open sheet: Escape closes it, the page behind doesn't scroll
+  useEffect(() => {
+    if (!open || !sheet) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    const prev = document.body.style.overflow
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [open, sheet])
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <div className="min-w-0 space-y-4">{main}</div>
-      <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">
-        {side}
-      </aside>
-    </div>
+    <>
+      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+        <div className="min-w-0 space-y-4">{main}</div>
+        {!sheet && <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">{side}</aside>}
+      </div>
+
+      {/* portalled to <body>: inside the page's spaced layout the fixed panels would pick up its margins */}
+      {sheet && createPortal(
+        <>
+          <div aria-hidden onClick={() => setOpen(false)}
+            className={cn("fixed inset-0 z-50 bg-black/40 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")} />
+          {/* always mounted, so settings keep their state while the sheet is closed */}
+          <div role="dialog" aria-modal="true" aria-label={settingsLabel} inert={!open}
+            className={cn("fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t bg-background px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-200",
+              open ? "translate-y-0" : "translate-y-full")}>
+            <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between gap-2 bg-background px-4 pt-1 pb-2">
+              <span className="absolute top-0 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-muted" aria-hidden />
+              <p className="pt-3 font-semibold">{settingsLabel}</p>
+              <Button variant="ghost" className="mt-2 h-9" onClick={() => setOpen(false)}>Done</Button>
+            </div>
+            <div className="space-y-4">{side}</div>
+            <Button className="mt-4 h-11 w-full" onClick={() => setOpen(false)}>Done</Button>
+          </div>
+        </>,
+        document.body,
+      )}
+
+      {bar && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center gap-2">
+            {sheet && (
+              <Button variant="outline" className={cn("h-11 shrink-0 px-3", !action && "flex-1")} aria-expanded={open} onClick={() => setOpen(true)}>
+                <SlidersHorizontal /> {settingsLabel}
+              </Button>
+            )}
+            {action && <div className="flex min-w-0 flex-1 gap-2 *:h-11 *:min-w-0 *:flex-1">{action}</div>}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
@@ -289,7 +357,7 @@ function TextTransform({ text, setText, output, filename, note, options, sample,
   options: React.ReactNode; sample?: string; extra?: React.ReactNode; inputLabel?: string; outputLabel?: string
 }) {
   return (
-    <ToolGrid
+    <ToolGrid settingsLabel="Options" action={<Button onClick={() => copyText(output)} disabled={!output}><Copy /> Copy result</Button>}
       main={<>
         <TextInput value={text} onChange={setText} sample={sample} label={inputLabel} />
         {extra}

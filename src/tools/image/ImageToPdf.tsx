@@ -17,6 +17,7 @@
  * Built for shadcn "base-nova" (Base UI primitives): uses `render` instead of `asChild`.
  * (sonner: render <Toaster /> once in your app layout to see the messages)
  */
+import { createPortal } from "react-dom"
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react"
 import type { jsPDF as JsPDF } from "jspdf"
 import { toast } from "sonner"
@@ -832,6 +833,7 @@ export default function ImageToPdf() {
   const [pdfOpen, setPdfOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const touch = useTouch()
+  const desktop = useMediaQuery("(min-width: 1024px)")
   const itemsRef = useRef(items)
   useEffect(() => { itemsRef.current = items }, [items])
 
@@ -875,6 +877,14 @@ export default function ImageToPdf() {
     window.addEventListener("paste", onPaste)
     return () => window.removeEventListener("paste", onPaste)
   }, [addFiles])
+
+  // phones/tablets: keep the end of the page clear of the fixed bottom bar
+  useEffect(() => {
+    if (desktop || items.length === 0) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [desktop, items.length])
 
   // Free object URLs when the component unmounts
   useEffect(() => () => { itemsRef.current.forEach((i) => URL.revokeObjectURL(i.url)) }, [])
@@ -965,7 +975,7 @@ export default function ImageToPdf() {
       {items.length === 0 && loading === 0 ? (
         <div className="mx-auto max-w-3xl"><Dropzone onFiles={addFiles} /></div>
       ) : (
-        <div className="grid gap-4 pb-28 sm:gap-6 lg:grid-cols-[1fr_360px] lg:pb-0">
+        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_360px]">
           {/* ── Board ── */}
           <section className="min-w-0 space-y-4">
             <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
@@ -1068,8 +1078,8 @@ export default function ImageToPdf() {
         </div>
       )}
 
-      {/* ── Phone / tablet bottom bar ── */}
-      {items.length > 0 && (
+      {/* ── Phone / tablet bottom bar (portalled to <body> so the page's spacing can't shift it) ── */}
+      {items.length > 0 && createPortal(
         <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
           {busy && (
             <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
@@ -1098,7 +1108,8 @@ export default function ImageToPdf() {
               </Button>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* ── Settings bottom sheet (phones / tablets) ── */}
