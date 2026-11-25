@@ -30,11 +30,12 @@ npm start          # serve the production build
 | `/` | Home: search, popular tools, every category |
 | `/tools` | All tools |
 | `/image-tools`, `/pdf-tools`, `/text-tools` | Category pages |
-| `/<tool-slug>` | One page per tool, e.g. `/image-to-pdf`, `/merge-pdf`, `/word-counter` |
+| `/tools/<tool-slug>` | One page per tool, e.g. `/tools/image-to-pdf`, `/tools/merge-pdf`, `/tools/word-counter` |
 | `/about`, `/contact`, `/privacy-policy`, `/terms` | Pages AdSense expects |
 
-Every tool page has: H1 and description, ads (top, in-content, bottom), the tool, "how to use" steps, FAQ, related tools,
-and JSON-LD (WebApplication, BreadcrumbList, FAQPage). Unknown URLs return a real 404 (`src/proxy.ts`).
+Every tool page has: its own meta title and description, H1, ads (top, in-content, bottom), the tool, "how to use" steps,
+about/features/uses content, FAQ, related tools, and JSON-LD (WebApplication, HowTo, BreadcrumbList, FAQPage).
+Old root URLs such as `/merge-pdf` redirect permanently to `/tools/merge-pdf` (`next.config.ts`).
 
 ## Tools (36)
 
@@ -46,23 +47,33 @@ and JSON-LD (WebApplication, BreadcrumbList, FAQPage). Unknown URLs return a rea
 
 ```
 src/
-  app/                   routes: home, /tools, [slug] (categories + tools), legal pages, sitemap, robots, ads.txt
-  components/site/       header, footer, ad slot, tool card, home search, theme
-  components/ui/         shadcn/ui primitives (Base UI)
-  lib/tools.ts           tool & category catalogue (names, text, icons, steps)
-  lib/site.ts            site settings and AdSense IDs
-  tools/<category>/X.tsx one file per tool — UI, logic and helpers all inside that file
-  tools/loader.tsx       slug → tool file (each tool is its own chunk, loaded only on its page)
-  proxy.ts               404 for unknown URLs
+  app/
+    page.tsx                      home
+    tools/page.tsx                all tools
+    tools/<slug>/page.tsx         one tool page (server): metadata, steps, intro, features, uses, FAQ
+    tools/<slug>/<Tool>.tsx       the tool itself ("use client"): UI, logic and helpers in one file
+    image-tools/ pdf-tools/ text-tools/   category pages
+    about/ contact/ privacy-policy/ terms/, sitemap.ts, robots.ts, ads.txt/
+  components/site/                header, footer, ad slot, tool card, tool page layout, category view, theme
+  components/ui/                  shadcn/ui primitives (Base UI)
+  lib/tools.ts                    tool & category list (names, short text, icons) for menus, cards and the sitemap
+  lib/site.ts                     site settings and AdSense IDs
+```
+
+Example:
+
+```
+src/app/tools/pdf-to-image/
+  page.tsx         ← metadata, content, FAQ (server component)
+  PdfToImage.tsx   ← the tool (client component)
 ```
 
 ### Adding a tool
 
-1. Create `src/tools/<category>/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file.
-2. Add an entry to `TOOLS` in `src/lib/tools.ts` (slug, name, short, description, category, icon, steps).
-3. Add the slug to `TOOL_COMPONENTS` in `src/tools/loader.tsx`.
-
-The page, sitemap entry, menus and 404 handling pick it up automatically.
+1. Create `src/app/tools/my-tool/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file.
+2. Create `src/app/tools/my-tool/page.tsx` (copy any other tool's page): set `metadata`, `steps`, `intro`, `features`, `uses`, `faq`,
+   and render `<MyTool />` inside `<ToolPageLayout slug="my-tool" …>`.
+3. Add an entry to `TOOLS` in `src/lib/tools.ts` (slug, name, short, description, category, icon) so it shows in menus, cards and the sitemap.
 
 ## Notes
 

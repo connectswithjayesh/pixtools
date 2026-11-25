@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { LayoutGrid, Menu, Moon, Sun, Wrench, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CATEGORIES, toolsIn, type Category } from "@/lib/tools"
+import { CATEGORIES, toolHref, toolsIn, type Category } from "@/lib/tools"
 import { SITE } from "@/lib/site"
 import { cn } from "@/lib/utils"
 
@@ -96,10 +96,10 @@ export function SiteHeader() {
                 {toolsIn(c).map((t) => (
                   <Link
                     key={t.slug}
-                    href={`/${t.slug}`}
+                    href={toolHref(t.slug)}
                     className={cn(
                       "flex min-h-11 items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent",
-                      active(`/${t.slug}`) && "bg-accent",
+                      active(toolHref(t.slug)) && "bg-accent",
                     )}
                   >
                     <t.icon className="size-4 shrink-0 text-primary" /> <span className="truncate">{t.name}</span>
