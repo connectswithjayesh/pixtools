@@ -68,9 +68,22 @@ src/app/tools/pdf-to-image/
   PdfToImage.tsx   ← the tool (client component)
 ```
 
+### Tool layout
+
+Every tool file has its own copy of a small `ToolGrid` layout (no shared tool component):
+
+- **Desktop (≥1024px):** a full-width workspace sized to the screen. Left = the view (files, preview, editor) and scrolls on its own.
+  Right = a panel with a fixed heading (tool name) at the top, the settings in the middle (scrolls) and the actions
+  (Convert / Download / Preview…) fixed at the bottom. The page content (how-to, FAQ…) and ads follow below the workspace.
+- **Phones/tablets:** the view on top, the actions in a fixed bottom bar, and the settings in a bottom sheet
+  (`mobile="sheet"`), or shown under the view for tools with few options (`mobile="inline"`).
+
+`<ToolGrid title="…" settingsLabel="…" main={…} side={…} action={…} />`
+
 ### Adding a tool
 
-1. Create `src/app/tools/my-tool/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file.
+1. Create `src/app/tools/my-tool/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file
+   (copy `ToolGrid` from any other tool for the layout).
 2. Create `src/app/tools/my-tool/page.tsx` (copy any other tool's page): set `metadata`, `steps`, `intro`, `features`, `uses`, `faq`,
    and render `<MyTool />` inside `<ToolPageLayout slug="my-tool" …>`.
 3. Add an entry to `TOOLS` in `src/lib/tools.ts` (slug, name, short, description, category, icon) so it shows in menus, cards and the sitemap.

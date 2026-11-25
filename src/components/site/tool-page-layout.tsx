@@ -33,24 +33,29 @@ export function ToolPageLayout({ slug, title, lead, steps, intro, features, uses
 
   return (
     <div className="space-y-10">
-      <div>
-        <nav aria-label="Breadcrumb" className="mb-3 text-sm text-muted-foreground">
-          <Link href="/" className="hover:text-foreground">Home</Link>
-          {" / "}<Link href={`/${cat.slug}`} className="hover:text-foreground">{cat.name}</Link>
-          {" / "}<span className="text-foreground">{title}</span>
-        </nav>
-        <div className="flex items-start gap-4">
-          <span className="hidden size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground sm:grid"><Icon className="size-6" /></span>
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{title}</h1>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base">{lead}</p>
+      <div className="space-y-4 lg:space-y-3">
+        <div>
+          <nav aria-label="Breadcrumb" className="mb-3 text-sm text-muted-foreground lg:mb-2">
+            <Link href="/" className="hover:text-foreground">Home</Link>
+            {" / "}<Link href={`/${cat.slug}`} className="hover:text-foreground">{cat.name}</Link>
+            {" / "}<span className="text-foreground">{title}</span>
+          </nav>
+          <div className="flex items-start gap-4 lg:items-center lg:gap-3">
+            <span className="hidden size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground sm:grid lg:size-9 lg:rounded-lg"><Icon className="size-6 lg:size-5" /></span>
+            <div className="min-w-0 lg:flex lg:items-baseline lg:gap-3">
+              <h1 className="text-2xl font-bold tracking-tight sm:text-3xl lg:shrink-0 lg:text-2xl">{title}</h1>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground sm:text-base lg:mt-0 lg:truncate lg:text-sm">{lead}</p>
+            </div>
           </div>
         </div>
+
+        {/* phones: ad above the tool; desktop: the workspace fills the screen, ad goes under it */}
+        <div className="lg:hidden"><AdSlot placement="top" /></div>
+
+        {children}
       </div>
 
-      <AdSlot placement="top" />
-
-      {children}
+      <div className="hidden lg:block"><AdSlot placement="top" /></div>
 
       <AdSlot placement="inContent" />
 

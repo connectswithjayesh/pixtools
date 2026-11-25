@@ -2,11 +2,12 @@
 /**
  * Unlock PDF — the whole tool in one file (UI, logic and helpers). Runs entirely in the browser.
  */
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
-import { CheckCircle2, ClipboardPaste, Download, Eye, EyeOff, FileUp, KeyRound, Loader2, LockOpen, Plus, ShieldCheck, Upload } from "lucide-react"
+import { CheckCircle2, ClipboardPaste, Download, Eye, EyeOff, FileUp, KeyRound, Loader2, LockOpen, Plus, ShieldCheck, Upload, SlidersHorizontal } from "lucide-react"
 import { useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
 
@@ -192,6 +193,126 @@ async function saveBlob(blob: Blob, filename: string) {
 
 const baseName = (n: string) => n.replace(/\.[^.]+$/, "")
 
+/**
+ * Tool layout.
+ * Desktop: a full-width workspace that fills the screen — the view on the left (scrolls on its own) and a
+ * settings panel on the right with a fixed heading, scrolling settings and the actions fixed at the bottom.
+ * Phone/tablet: the actions sit in a bar fixed to the bottom of the screen, and the settings open in a
+ * bottom sheet (mobile="sheet") or stay below the view (mobile="inline").
+ */
+function ToolGrid({ title, main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
+  title: string; main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
+}) {
+  const desktop = useSyncExternalStore(
+    (cb) => { const m = window.matchMedia("(min-width: 1024px)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb) },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
+  )
+  const [open, setOpen] = useState(false)
+  const workspace = useRef<HTMLDivElement>(null)
+  const sheet = !desktop && mobile === "sheet"
+  const bar = !desktop && (sheet || !!action)
+
+  // desktop: span the whole window width and fill the screen below the page heading
+  useEffect(() => {
+    if (!desktop) return
+    const fit = () => {
+      const root = document.documentElement
+      root.style.setProperty("--sbw", `${window.innerWidth - root.clientWidth}px`)
+      const el = workspace.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.scrollY
+      el.style.height = `${Math.max(480, window.innerHeight - Math.min(top, 220) - 16)}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [desktop])
+  // phone: keep the end of the page clear of the fixed bar
+  useEffect(() => {
+    if (!bar) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [bar])
+  // open sheet: Escape closes it, the page behind doesn't scroll
+  useEffect(() => {
+    if (!open || !sheet) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    const prev = document.body.style.overflow
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [open, sheet])
+
+  if (desktop) {
+    return (
+      <div ref={workspace}
+        // full window width without a transform (a transformed parent would break fixed-position drag previews)
+        style={{ width: "calc(100vw - var(--sbw, 0px))", marginLeft: "calc(50% - (100vw - var(--sbw, 0px)) / 2)" }}
+        className="grid h-[calc(100dvh-4.5rem)] grid-cols-[minmax(0,1fr)_400px] border-y bg-muted/40 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="min-w-0 overflow-y-auto overscroll-contain p-6 xl:p-8">
+          <div className="mx-auto max-w-5xl space-y-4">{main}</div>
+        </div>
+        <aside aria-label={`${title} ${settingsLabel.toLowerCase()}`} className="flex min-h-0 flex-col border-l bg-background">
+          <div className="shrink-0 border-b px-5 py-4">
+            <h2 className="text-lg leading-tight font-semibold">{title}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{settingsLabel}</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 *:rounded-none *:border-0 *:bg-transparent *:px-0 *:py-5 *:shadow-none *:not-first:border-t">
+            {side}
+          </div>
+          {action && <div className="shrink-0 space-y-2 border-t bg-background p-4 *:w-full">{action}</div>}
+        </aside>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="min-w-0 space-y-4">{main}</div>
+        {!sheet && <aside className="space-y-4">{side}</aside>}
+      </div>
+
+      {/* portalled to <body>: inside the page's spaced layout the fixed panels would pick up its margins */}
+      {sheet && createPortal(
+        <>
+          <div aria-hidden onClick={() => setOpen(false)}
+            className={cn("fixed inset-0 z-50 bg-black/40 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")} />
+          {/* always mounted, so settings keep their state while the sheet is closed */}
+          <div role="dialog" aria-modal="true" aria-label={settingsLabel} inert={!open}
+            className={cn("fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t bg-background px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-200",
+              open ? "translate-y-0" : "translate-y-full")}>
+            <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between gap-2 bg-background px-4 pt-1 pb-2">
+              <span className="absolute top-0 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-muted" aria-hidden />
+              <p className="pt-3 font-semibold">{settingsLabel}</p>
+              <Button variant="ghost" className="mt-2 h-9" onClick={() => setOpen(false)}>Done</Button>
+            </div>
+            <div className="space-y-4">{side}</div>
+            <Button className="mt-4 h-11 w-full" onClick={() => setOpen(false)}>Done</Button>
+          </div>
+        </>,
+        document.body,
+      )}
+
+      {bar && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center gap-2">
+            {sheet && (
+              <Button variant="outline" className={cn("h-11 shrink-0 px-3", !action && "flex-1")} aria-expanded={open} onClick={() => setOpen(true)}>
+                <SlidersHorizontal /> {settingsLabel}
+              </Button>
+            )}
+            {action && <div className="flex min-w-0 flex-1 gap-2 *:h-11 *:min-w-0 *:flex-1">{action}</div>}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 /* ═══════════════ Tool ═══════════════ */
 function UnlockPdfTool() {
   const [file, setFile] = useState<{ f: File; bytes: Uint8Array; state: 0 | 1 | 2 } | null>(null)
@@ -228,44 +349,50 @@ function UnlockPdfTool() {
     ? <div className="grid h-64 place-items-center rounded-xl border bg-card"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>
     : <FileDrop accept="application/pdf,.pdf" multiple={false} onFiles={load} title="Drop a protected PDF" hint="Remove the password and restrictions from a PDF you own" />
 
-  return (
-    <div className="mx-auto max-w-xl">
-      <Panel>
-        <div className="flex items-center gap-3">
-          <div className="grid size-12 place-items-center rounded-lg bg-accent text-primary"><LockOpen className="size-6" /></div>
-          <div className="min-w-0">
-            <p className="truncate font-medium">{file.f.name}</p>
-            <p className="text-sm text-muted-foreground">{formatBytes(file.f.size)} · {file.state === 2 ? "Password required to open" : file.state === 1 ? "Has editing/printing restrictions" : "Not protected"}</p>
-          </div>
-        </div>
+  const status = file.state === 2 ? "Password required to open" : file.state === 1 ? "Has editing/printing restrictions" : "Not protected"
+  const action = file.state === 0 ? undefined : result
+    ? <Button size="lg" className="w-full" onClick={() => saveBlob(result, name)}><Download /> Download unlocked PDF</Button>
+    : <Button size="lg" className="w-full" disabled={busy || (file.state === 2 && !pw)} onClick={run}>{busy ? <Loader2 className="animate-spin" /> : <KeyRound />} Unlock PDF</Button>
 
-        {file.state === 0 ? (
-          <p className="flex items-center gap-2 rounded-lg bg-muted p-3 text-sm"><CheckCircle2 className="size-4 text-emerald-600" /> This PDF has no password or restrictions — nothing to unlock.</p>
-        ) : (
-          <>
-            {file.state === 2 && (
-              <Field label="PDF password">
-                <div className="relative">
-                  <Input type={show ? "text" : "password"} value={pw} autoFocus onChange={(e) => { setPw(e.target.value); setResult(null) }} onKeyDown={(e) => e.key === "Enter" && pw && run()} className="pr-10" />
-                  <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((s) => !s)} className="absolute top-1/2 right-2 -translate-y-1/2 cursor-pointer text-muted-foreground">{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
-                </div>
-              </Field>
-            )}
-            {file.state === 1 && <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">This file opens without a password but blocks printing, copying or editing. Unlocking removes those restrictions.</p>}
-            {result ? (
-              <div className="space-y-2">
-                <p className="text-sm text-muted-foreground">{name} · {formatBytes(result.size)}</p>
-                <Button size="lg" className="w-full" onClick={() => saveBlob(result, name)}><Download /> Download unlocked PDF</Button>
+  return (
+    <ToolGrid
+      title="Unlock PDF" settingsLabel="Password" mobile="inline" action={action}
+      main={
+        <div className="mx-auto max-w-xl space-y-4">
+          <Panel>
+            <div className="flex items-center gap-3">
+              <div className="grid size-12 shrink-0 place-items-center rounded-lg bg-accent text-primary"><LockOpen className="size-6" /></div>
+              <div className="min-w-0">
+                <p className="truncate font-medium">{file.f.name}</p>
+                <p className="text-sm text-muted-foreground">{formatBytes(file.f.size)} · {status}</p>
               </div>
-            ) : (
-              <Button size="lg" className="w-full" disabled={busy || (file.state === 2 && !pw)} onClick={run}>{busy ? <Loader2 className="animate-spin" /> : <KeyRound />} Unlock PDF</Button>
+            </div>
+            {file.state === 0 && (
+              <p className="flex items-center gap-2 rounded-lg bg-muted p-3 text-sm"><CheckCircle2 className="size-4 text-emerald-600" /> This PDF has no password or restrictions — nothing to unlock.</p>
             )}
-          </>
-        )}
-        <p className="text-xs text-muted-foreground">Only unlock files you own or have permission to change.</p>
-        <Button variant="outline" className="w-full" onClick={() => { setFile(null); setResult(null) }}><FileUp /> Choose another PDF</Button>
-      </Panel>
-    </div>
+            {result && (
+              <p className="flex items-center gap-2 rounded-lg bg-emerald-500/10 p-3 text-sm"><CheckCircle2 className="size-4 text-emerald-600" /> Unlocked: {name} · {formatBytes(result.size)}</p>
+            )}
+          </Panel>
+        </div>
+      }
+      side={
+        <Panel>
+          {file.state === 2 && (
+            <Field label="PDF password">
+              <div className="relative">
+                <Input type={show ? "text" : "password"} value={pw} autoFocus onChange={(e) => { setPw(e.target.value); setResult(null) }} onKeyDown={(e) => e.key === "Enter" && pw && run()} className="pr-10" />
+                <button type="button" aria-label={show ? "Hide password" : "Show password"} onClick={() => setShow((s) => !s)} className="absolute top-1/2 right-0.5 grid size-9 -translate-y-1/2 cursor-pointer place-items-center rounded-md text-muted-foreground hover:text-foreground">{show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}</button>
+              </div>
+            </Field>
+          )}
+          {file.state === 1 && <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">This file opens without a password but blocks printing, copying or editing. Unlocking removes those restrictions.</p>}
+          {file.state === 0 && <p className="text-sm text-muted-foreground">Nothing to unlock in this file.</p>}
+          <p className="text-xs text-muted-foreground">Only unlock files you own or have permission to change.</p>
+          <Button variant="outline" className="w-full" onClick={() => { setFile(null); setResult(null) }}><FileUp /> Choose another PDF</Button>
+        </Panel>
+      }
+    />
   )
 }
 
