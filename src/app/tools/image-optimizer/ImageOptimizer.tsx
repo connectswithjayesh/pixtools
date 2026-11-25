@@ -2,13 +2,14 @@
 /**
  * Image Optimizer — the whole tool in one file (UI, logic and helpers). Runs entirely in the browser.
  */
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
-import { ArrowLeftRight, ChevronDown, ClipboardPaste, Download, ImageUp, Import, Link2, Link2Off, Loader2, Maximize, Minus, Plus, RotateCw, Save, ShieldCheck, SquareDashed, TriangleAlert, Upload } from "lucide-react"
+import { ArrowLeftRight, ChevronDown, ClipboardPaste, Download, ImageUp, Import, Link2, Link2Off, Loader2, Maximize, Minus, Plus, RotateCw, Save, ShieldCheck, SquareDashed, TriangleAlert, Upload, SlidersHorizontal } from "lucide-react"
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
 import { toast } from "sonner"
 
@@ -558,7 +559,7 @@ function Viewer({ width, height, left, right, leftLabel, rightLabel, onRotate, o
   return (
     <div
       ref={box}
-      className={cn("relative h-[62vh] min-h-[380px] touch-none overflow-hidden rounded-xl border select-none",
+      className={cn("relative h-[62vh] min-h-[380px] lg:h-[calc(100dvh-15rem)] touch-none overflow-hidden rounded-xl border select-none",
         bg === "checker" && "bg-[repeating-conic-gradient(#d4d4d8_0_25%,#fafafa_0_50%)] bg-[length:20px_20px]",
         bg === "light" && "bg-white", bg === "dark" && "bg-neutral-900", "cursor-grab active:cursor-grabbing")}
       onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}
@@ -593,6 +594,126 @@ function Viewer({ width, height, left, right, leftLabel, rightLabel, onRotate, o
         <Button variant="ghost" size="icon-sm" aria-label="Rotate image" title="Rotate 90°" onClick={onRotate}><RotateCw /></Button>
       </div>
     </div>
+  )
+}
+
+/**
+ * Tool layout.
+ * Desktop: a full-width workspace that fills the screen — the view on the left (scrolls on its own) and a
+ * settings panel on the right with a fixed heading, scrolling settings and the actions fixed at the bottom.
+ * Phone/tablet: the actions sit in a bar fixed to the bottom of the screen, and the settings open in a
+ * bottom sheet (mobile="sheet") or stay below the view (mobile="inline").
+ */
+function ToolGrid({ title, main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
+  title: string; main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
+}) {
+  const desktop = useSyncExternalStore(
+    (cb) => { const m = window.matchMedia("(min-width: 1024px)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb) },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
+  )
+  const [open, setOpen] = useState(false)
+  const workspace = useRef<HTMLDivElement>(null)
+  const sheet = !desktop && mobile === "sheet"
+  const bar = !desktop && (sheet || !!action)
+
+  // desktop: span the whole window width and fill the screen below the page heading
+  useEffect(() => {
+    if (!desktop) return
+    const fit = () => {
+      const root = document.documentElement
+      root.style.setProperty("--sbw", `${window.innerWidth - root.clientWidth}px`)
+      const el = workspace.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.scrollY
+      el.style.height = `${Math.max(480, window.innerHeight - Math.min(top, 220) - 16)}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [desktop])
+  // phone: keep the end of the page clear of the fixed bar
+  useEffect(() => {
+    if (!bar) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [bar])
+  // open sheet: Escape closes it, the page behind doesn't scroll
+  useEffect(() => {
+    if (!open || !sheet) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    const prev = document.body.style.overflow
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [open, sheet])
+
+  if (desktop) {
+    return (
+      <div ref={workspace}
+        // full window width without a transform (a transformed parent would break fixed-position drag previews)
+        style={{ width: "calc(100vw - var(--sbw, 0px))", marginLeft: "calc(50% - (100vw - var(--sbw, 0px)) / 2)" }}
+        className="grid h-[calc(100dvh-4.5rem)] grid-cols-[minmax(0,1fr)_400px] border-y bg-muted/40 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="min-w-0 overflow-y-auto overscroll-contain p-6 xl:p-8">
+          <div className="mx-auto max-w-5xl space-y-4">{main}</div>
+        </div>
+        <aside aria-label={`${title} ${settingsLabel.toLowerCase()}`} className="flex min-h-0 flex-col border-l bg-background">
+          <div className="shrink-0 border-b px-5 py-4">
+            <h2 className="text-lg leading-tight font-semibold">{title}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{settingsLabel}</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 *:rounded-none *:border-0 *:bg-transparent *:px-0 *:py-5 *:shadow-none *:not-first:border-t">
+            {side}
+          </div>
+          {action && <div className="shrink-0 space-y-2 border-t bg-background p-4 *:w-full">{action}</div>}
+        </aside>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="min-w-0 space-y-4">{main}</div>
+        {!sheet && <aside className="space-y-4">{side}</aside>}
+      </div>
+
+      {/* portalled to <body>: inside the page's spaced layout the fixed panels would pick up its margins */}
+      {sheet && createPortal(
+        <>
+          <div aria-hidden onClick={() => setOpen(false)}
+            className={cn("fixed inset-0 z-50 bg-black/40 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")} />
+          {/* always mounted, so settings keep their state while the sheet is closed */}
+          <div role="dialog" aria-modal="true" aria-label={settingsLabel} inert={!open}
+            className={cn("fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t bg-background px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-200",
+              open ? "translate-y-0" : "translate-y-full")}>
+            <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between gap-2 bg-background px-4 pt-1 pb-2">
+              <span className="absolute top-0 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-muted" aria-hidden />
+              <p className="pt-3 font-semibold">{settingsLabel}</p>
+              <Button variant="ghost" className="mt-2 h-9" onClick={() => setOpen(false)}>Done</Button>
+            </div>
+            <div className="space-y-4">{side}</div>
+            <Button className="mt-4 h-11 w-full" onClick={() => setOpen(false)}>Done</Button>
+          </div>
+        </>,
+        document.body,
+      )}
+
+      {bar && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center gap-2">
+            {sheet && (
+              <Button variant="outline" className={cn("h-11 shrink-0 px-3", !action && "flex-1")} aria-expanded={open} onClick={() => setOpen(true)}>
+                <SlidersHorizontal /> {settingsLabel}
+              </Button>
+            )}
+            {action && <div className="flex min-w-0 flex-1 gap-2 *:h-11 *:min-w-0 *:flex-1">{action}</div>}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
@@ -757,31 +878,43 @@ function ImageOptimizerTool() {
       : <FileDrop accept={ACCEPT} multiple={false} onFiles={(f) => load(f[0])} paste title="Drop an image to optimize" hint="Compare codecs side by side — MozJPEG, WebP, AVIF, JPEG XL, OxiPNG and more" />
   }
 
+  const dlButton = (i: 0 | 1) => {
+    const r = results[i]
+    const ready = !!r && !busy[i]
+    return (
+      <Button key={i} size="lg" variant={i === 1 ? "default" : "outline"} className="w-full" disabled={!ready} onClick={() => download(i)}>
+        <Download /> {i === 0 ? "Left" : "Right"}: {codec(sides[i].encoder.type).label}{ready ? ` · ${formatBytes(r.blob.size)}` : ""}
+      </Button>
+    )
+  }
+
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm"><b>{src.file.name}</b> <span className="text-muted-foreground">· {src.w}×{src.h}px · {formatBytes(src.file.size)}</span></p>
-        <div className="flex items-center gap-2">
-          <span className="hidden text-xs text-muted-foreground md:inline">Scroll to zoom · drag to pan · double-click to zoom in</span>
-          <label>
-            <input type="file" accept={ACCEPT} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) load(f) }} />
-            <Button variant="outline" size="sm" nativeButton={false} render={<span />} className="cursor-pointer"><ImageUp /> Open another</Button>
-          </label>
+    <ToolGrid
+      title="Image Optimizer" settingsLabel="Left and right versions" mobile="inline"
+      action={<>{dlButton(0)}{dlButton(1)}</>}
+      main={<>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm"><b>{src.file.name}</b> <span className="text-muted-foreground">· {src.w}×{src.h}px · {formatBytes(src.file.size)}</span></p>
+          <div className="flex items-center gap-2">
+            <span className="hidden text-xs text-muted-foreground md:inline">Scroll to zoom · drag to pan · double-click to zoom in</span>
+            <label>
+              <input type="file" accept={ACCEPT} className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) load(f) }} />
+              <Button variant="outline" size="sm" nativeButton={false} render={<span />} className="cursor-pointer"><ImageUp /> Open another</Button>
+            </label>
+          </div>
         </div>
-      </div>
-
-      <Viewer width={src.w} height={src.h} left={results[0]?.url ?? null} right={results[1]?.url ?? null}
-        leftLabel={label(0)} rightLabel={label(1)} onRotate={rotate} onDropFile={load} />
-
-      <div className="grid gap-4 md:grid-cols-2">
+        <Viewer width={src.w} height={src.h} left={results[0]?.url ?? null} right={results[1]?.url ?? null}
+          leftLabel={label(0)} rightLabel={label(1)} onRotate={rotate} onDropFile={load} />
+      </>}
+      side={<>
         {([0, 1] as const).map((i) => (
           <SidePanel key={i} side={i === 0 ? "left" : "right"} s={sides[i]} srcW={src.w} srcH={src.h} originalSize={src.file.size}
             onChange={(s) => setAt(setSides, i, s)} result={results[i]} busy={busy[i]} error={errors[i]}
             onDownload={() => download(i)}
             onCopyToOther={() => setAt(setSides, i === 0 ? 1 : 0, structuredClone(sides[i]))} />
         ))}
-      </div>
-    </div>
+      </>}
+    />
   )
 }
 

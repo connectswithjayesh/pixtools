@@ -46,12 +46,14 @@ function Segmented<T extends string>({ value, onChange, options, className }: {
 }
 
 /**
- * Tool layout. Desktop: work area + settings sidebar.
- * Phone/tablet: the main action sits in a bar fixed to the bottom of the screen, and the settings open
- * in a bottom sheet (mobile="sheet") or stay below the work area (mobile="inline").
+ * Tool layout.
+ * Desktop: a full-width workspace that fills the screen — the view on the left (scrolls on its own) and a
+ * settings panel on the right with a fixed heading, scrolling settings and the actions fixed at the bottom.
+ * Phone/tablet: the actions sit in a bar fixed to the bottom of the screen, and the settings open in a
+ * bottom sheet (mobile="sheet") or stay below the view (mobile="inline").
  */
-function ToolGrid({ main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
-  main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
+function ToolGrid({ title, main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
+  title: string; main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
 }) {
   const desktop = useSyncExternalStore(
     (cb) => { const m = window.matchMedia("(min-width: 1024px)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb) },
@@ -59,10 +61,26 @@ function ToolGrid({ main, side, action, mobile = "sheet", settingsLabel = "Setti
     () => true,
   )
   const [open, setOpen] = useState(false)
+  const workspace = useRef<HTMLDivElement>(null)
   const sheet = !desktop && mobile === "sheet"
   const bar = !desktop && (sheet || !!action)
 
-  // keep the end of the page clear of the fixed bar
+  // desktop: span the whole window width and fill the screen below the page heading
+  useEffect(() => {
+    if (!desktop) return
+    const fit = () => {
+      const root = document.documentElement
+      root.style.setProperty("--sbw", `${window.innerWidth - root.clientWidth}px`)
+      const el = workspace.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.scrollY
+      el.style.height = `${Math.max(480, window.innerHeight - Math.min(top, 220) - 16)}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [desktop])
+  // phone: keep the end of the page clear of the fixed bar
   useEffect(() => {
     if (!bar) return
     const prev = document.body.style.paddingBottom
@@ -79,11 +97,34 @@ function ToolGrid({ main, side, action, mobile = "sheet", settingsLabel = "Setti
     return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
   }, [open, sheet])
 
+  if (desktop) {
+    return (
+      <div ref={workspace}
+        // full window width without a transform (a transformed parent would break fixed-position drag previews)
+        style={{ width: "calc(100vw - var(--sbw, 0px))", marginLeft: "calc(50% - (100vw - var(--sbw, 0px)) / 2)" }}
+        className="grid h-[calc(100dvh-4.5rem)] grid-cols-[minmax(0,1fr)_400px] border-y bg-muted/40 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="min-w-0 overflow-y-auto overscroll-contain p-6 xl:p-8">
+          <div className="mx-auto max-w-5xl space-y-4">{main}</div>
+        </div>
+        <aside aria-label={`${title} ${settingsLabel.toLowerCase()}`} className="flex min-h-0 flex-col border-l bg-background">
+          <div className="shrink-0 border-b px-5 py-4">
+            <h2 className="text-lg leading-tight font-semibold">{title}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{settingsLabel}</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 *:rounded-none *:border-0 *:bg-transparent *:px-0 *:py-5 *:shadow-none *:not-first:border-t">
+            {side}
+          </div>
+          {action && <div className="shrink-0 space-y-2 border-t bg-background p-4 *:w-full">{action}</div>}
+        </aside>
+      </div>
+    )
+  }
+
   return (
     <>
-      <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+      <div className="space-y-6">
         <div className="min-w-0 space-y-4">{main}</div>
-        {!sheet && <aside className="space-y-4 lg:sticky lg:top-20 lg:self-start">{side}</aside>}
+        {!sheet && <aside className="space-y-4">{side}</aside>}
       </div>
 
       {/* portalled to <body>: inside the page's spaced layout the fixed panels would pick up its margins */}
@@ -368,7 +409,7 @@ function TextTransform({ text, setText, output, filename, note, options, sample,
   options: React.ReactNode; sample?: string; extra?: React.ReactNode; inputLabel?: string; outputLabel?: string
 }) {
   return (
-    <ToolGrid settingsLabel="Options" action={<Button onClick={() => copyText(output)} disabled={!output}><Copy /> Copy result</Button>}
+    <ToolGrid title="Sort Lines" settingsLabel="Options" action={<Button onClick={() => copyText(output)} disabled={!output}><Copy /> Copy result</Button>}
       main={<>
         <TextInput value={text} onChange={setText} sample={sample} label={inputLabel} />
         {extra}

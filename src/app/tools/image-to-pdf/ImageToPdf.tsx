@@ -34,7 +34,6 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -819,6 +818,128 @@ function SettingsPanel({ s, set }: { s: PdfSettings; set: SetSetting }) {
   )
 }
 
+/* ═════════════════════════════ 9b. Layout ═════════════════════════════ */
+
+/**
+ * Tool layout.
+ * Desktop: a full-width workspace that fills the screen — the view on the left (scrolls on its own) and a
+ * settings panel on the right with a fixed heading, scrolling settings and the actions fixed at the bottom.
+ * Phone/tablet: the actions sit in a bar fixed to the bottom of the screen, and the settings open in a
+ * bottom sheet (mobile="sheet") or stay below the view (mobile="inline").
+ */
+function ToolGrid({ title, main, side, action, mobile = "sheet", settingsLabel = "Settings" }: {
+  title: string; main: React.ReactNode; side: React.ReactNode; action?: React.ReactNode; mobile?: "sheet" | "inline"; settingsLabel?: string
+}) {
+  const desktop = useSyncExternalStore(
+    (cb) => { const m = window.matchMedia("(min-width: 1024px)"); m.addEventListener("change", cb); return () => m.removeEventListener("change", cb) },
+    () => window.matchMedia("(min-width: 1024px)").matches,
+    () => true,
+  )
+  const [open, setOpen] = useState(false)
+  const workspace = useRef<HTMLDivElement>(null)
+  const sheet = !desktop && mobile === "sheet"
+  const bar = !desktop && (sheet || !!action)
+
+  // desktop: span the whole window width and fill the screen below the page heading
+  useEffect(() => {
+    if (!desktop) return
+    const fit = () => {
+      const root = document.documentElement
+      root.style.setProperty("--sbw", `${window.innerWidth - root.clientWidth}px`)
+      const el = workspace.current
+      if (!el) return
+      const top = el.getBoundingClientRect().top + window.scrollY
+      el.style.height = `${Math.max(480, window.innerHeight - Math.min(top, 220) - 16)}px`
+    }
+    fit()
+    window.addEventListener("resize", fit)
+    return () => window.removeEventListener("resize", fit)
+  }, [desktop])
+  // phone: keep the end of the page clear of the fixed bar
+  useEffect(() => {
+    if (!bar) return
+    const prev = document.body.style.paddingBottom
+    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
+    return () => { document.body.style.paddingBottom = prev }
+  }, [bar])
+  // open sheet: Escape closes it, the page behind doesn't scroll
+  useEffect(() => {
+    if (!open || !sheet) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false) }
+    const prev = document.body.style.overflow
+    document.addEventListener("keydown", onKey)
+    document.body.style.overflow = "hidden"
+    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev }
+  }, [open, sheet])
+
+  if (desktop) {
+    return (
+      <div ref={workspace}
+        // full window width without a transform (a transformed parent would break fixed-position drag previews)
+        style={{ width: "calc(100vw - var(--sbw, 0px))", marginLeft: "calc(50% - (100vw - var(--sbw, 0px)) / 2)" }}
+        className="grid h-[calc(100dvh-4.5rem)] grid-cols-[minmax(0,1fr)_400px] border-y bg-muted/40 xl:grid-cols-[minmax(0,1fr)_440px]">
+        <div className="min-w-0 overflow-y-auto overscroll-contain p-6 xl:p-8">
+          <div className="mx-auto max-w-5xl space-y-4">{main}</div>
+        </div>
+        <aside aria-label={`${title} ${settingsLabel.toLowerCase()}`} className="flex min-h-0 flex-col border-l bg-background">
+          <div className="shrink-0 border-b px-5 py-4">
+            <h2 className="text-lg leading-tight font-semibold">{title}</h2>
+            <p className="mt-0.5 text-sm text-muted-foreground">{settingsLabel}</p>
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 *:rounded-none *:border-0 *:bg-transparent *:px-0 *:py-5 *:shadow-none *:not-first:border-t">
+            {side}
+          </div>
+          {action && <div className="shrink-0 space-y-2 border-t bg-background p-4 *:w-full">{action}</div>}
+        </aside>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="min-w-0 space-y-4">{main}</div>
+        {!sheet && <aside className="space-y-4">{side}</aside>}
+      </div>
+
+      {/* portalled to <body>: inside the page's spaced layout the fixed panels would pick up its margins */}
+      {sheet && createPortal(
+        <>
+          <div aria-hidden onClick={() => setOpen(false)}
+            className={cx("fixed inset-0 z-50 bg-black/40 transition-opacity duration-200", open ? "opacity-100" : "pointer-events-none opacity-0")} />
+          {/* always mounted, so settings keep their state while the sheet is closed */}
+          <div role="dialog" aria-modal="true" aria-label={settingsLabel} inert={!open}
+            className={cx("fixed inset-x-0 bottom-0 z-50 max-h-[85dvh] overflow-y-auto overscroll-contain rounded-t-2xl border-t bg-background px-4 pt-2 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-2xl transition-transform duration-200",
+              open ? "translate-y-0" : "translate-y-full")}>
+            <div className="sticky top-0 z-10 -mx-4 mb-2 flex items-center justify-between gap-2 bg-background px-4 pt-1 pb-2">
+              <span className="absolute top-0 left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-muted" aria-hidden />
+              <p className="pt-3 font-semibold">{settingsLabel}</p>
+              <Button variant="ghost" className="mt-2 h-9" onClick={() => setOpen(false)}>Done</Button>
+            </div>
+            <div className="space-y-4">{side}</div>
+            <Button className="mt-4 h-11 w-full" onClick={() => setOpen(false)}>Done</Button>
+          </div>
+        </>,
+        document.body,
+      )}
+
+      {bar && createPortal(
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mx-auto flex max-w-xl items-center gap-2">
+            {sheet && (
+              <Button variant="outline" className={cx("h-11 shrink-0 px-3", !action && "flex-1")} aria-expanded={open} onClick={() => setOpen(true)}>
+                <SlidersHorizontal /> {settingsLabel}
+              </Button>
+            )}
+            {action && <div className="flex min-w-0 flex-1 gap-2 *:h-11 *:min-w-0 *:flex-1">{action}</div>}
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
+  )
+}
+
 /* ═════════════════════════════ 10. Main component ═════════════════════════════ */
 
 function ImageToPdfTool() {
@@ -831,7 +952,6 @@ function ImageToPdfTool() {
   const [result, setResult] = useState<(PdfResult & { url: string }) | null>(null)
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [pdfOpen, setPdfOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const touch = useTouch()
   const desktop = useMediaQuery("(min-width: 1024px)")
   const itemsRef = useRef(items)
@@ -877,14 +997,6 @@ function ImageToPdfTool() {
     window.addEventListener("paste", onPaste)
     return () => window.removeEventListener("paste", onPaste)
   }, [addFiles])
-
-  // phones/tablets: keep the end of the page clear of the fixed bottom bar
-  useEffect(() => {
-    if (desktop || items.length === 0) return
-    const prev = document.body.style.paddingBottom
-    document.body.style.paddingBottom = "calc(5.5rem + env(safe-area-inset-bottom))"
-    return () => { document.body.style.paddingBottom = prev }
-  }, [desktop, items.length])
 
   // Free object URLs when the component unmounts
   useEffect(() => () => { itemsRef.current.forEach((i) => URL.revokeObjectURL(i.url)) }, [])
@@ -944,9 +1056,6 @@ function ImageToPdfTool() {
       const r = await buildPdf(items, settings, (done, total) => setProgress({ done, total }))
       setResult({ ...r, url: URL.createObjectURL(r.blob) })
       toast.success(r.kind === "pdf" ? `PDF ready — ${r.pages} page${r.pages > 1 ? "s" : ""}` : `ZIP ready — ${r.pages} PDFs`)
-      // desktop: bring the result card into view (on phones the bottom bar already shows it)
-      if (window.matchMedia("(min-width: 1024px)").matches)
-        setTimeout(() => document.getElementById("img2pdf-result")?.scrollIntoView({ behavior: "smooth", block: "center" }), 50)
     } catch (e) {
       console.error(e)
       toast.error("Conversion failed. Try fewer or smaller images, or lower the resolution.")
@@ -970,158 +1079,105 @@ function ImageToPdfTool() {
   const previewItem = previewIdx >= 0 ? items[previewIdx] : null
   const busy = !!progress
 
+  const action = result ? (
+    desktop ? <>
+      <Button size="lg" className="w-full" onClick={download}><Download /> Download {result.kind === "pdf" ? "PDF" : "ZIP"} · {formatBytes(result.blob.size)}</Button>
+      <div className="grid grid-cols-2 gap-2">
+        {result.kind === "pdf" && <Button variant="outline" onClick={openPdf}><ExternalLink /> Preview</Button>}
+        <Button variant="outline" className={result.kind === "zip" ? "col-span-2" : ""} onClick={convert}><RefreshCcw /> Rebuild</Button>
+      </div>
+    </> : <>
+      {result.kind === "pdf" && <Button variant="outline" size="lg" className="max-w-14 flex-none!" onClick={openPdf} aria-label="Open PDF"><ExternalLink /></Button>}
+      <Button size="lg" onClick={download}><Download /><span className="truncate">Download {result.kind === "pdf" ? "PDF" : "ZIP"}</span></Button>
+    </>
+  ) : <>
+    <Button size="lg" className="w-full" disabled={busy || loading > 0 || !items.length} onClick={convert}>
+      {busy ? <><Loader2 className="animate-spin" /> Converting {progress!.done}/{progress!.total}</> : <><FileText /><span className="truncate">Convert {items.length} to PDF</span></>}
+    </Button>
+    {desktop && busy && (
+      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+        <div className="h-full bg-primary transition-all" style={{ width: `${(progress!.done / progress!.total) * 100}%` }} />
+      </div>
+    )}
+  </>
+
   return (
     <TooltipProvider delay={300}>
       {items.length === 0 && loading === 0 ? (
         <div className="mx-auto max-w-3xl"><Dropzone onFiles={addFiles} /></div>
       ) : (
-        <div className="grid gap-4 sm:gap-6 lg:grid-cols-[1fr_360px]">
-          {/* ── Board ── */}
-          <section className="min-w-0 space-y-4">
-            <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
-              <div className="flex flex-wrap items-center gap-x-2 px-1 text-sm sm:px-2">
-                <span className="font-semibold">{items.length} page{items.length !== 1 && "s"}</span>
-                <span className="text-muted-foreground">· {formatBytes(totalSize)}</span>
-                {loading > 0 && <span className="inline-flex items-center gap-1 text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> loading {loading}…</span>}
-              </div>
-              <div className="ml-auto flex flex-wrap items-center gap-2">
-                {selIds.length > 0 ? (
-                  <>
-                    <Badge variant="outline">{selIds.length} selected</Badge>
-                    <Button variant="outline" size="sm" aria-label="Rotate left" onClick={() => rotate(selIds, -1)}><RotateCcw /><span className="hidden sm:inline">Left</span></Button>
-                    <Button variant="outline" size="sm" aria-label="Rotate right" onClick={() => rotate(selIds, 1)}><RotateCw /><span className="hidden sm:inline">Right</span></Button>
-                    <Button variant="outline" size="sm" className="text-destructive" onClick={() => remove(selIds)}><Trash2 /> Delete</Button>
-                    <Button variant="ghost" size="icon" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X /></Button>
-                  </>
-                ) : (
-                  <>
-                    <Select value={null} onValueChange={(v) => { if (v) sortBy(v as string) }}>
-                      <SelectTrigger size="sm" className="w-[120px]"><ArrowDownUp className="size-4" /><SelectValue placeholder="Sort" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="name-asc"><ArrowDownAZ className="size-4" /> Name A→Z</SelectItem>
-                        <SelectItem value="name-desc"><ArrowUpAZ className="size-4" /> Name Z→A</SelectItem>
-                        <SelectItem value="date"><CalendarClock className="size-4" /> Date modified</SelectItem>
-                        <SelectItem value="size"><HardDrive className="size-4" /> Largest first</SelectItem>
-                        <SelectItem value="reverse"><ArrowDownUp className="size-4" /> Reverse order</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button variant="outline" size="sm" onClick={() => setSelected(new Set(items.map((i) => i.id)))}><CheckSquare /><span className="hidden min-[400px]:inline">Select all</span></Button>
-                    <div className="hidden items-center gap-2 pl-1 sm:flex">
-                      <ZoomIn className="size-4 text-muted-foreground" />
-                      <Slider className="w-24" value={[zoom]} min={130} max={320} step={10} onValueChange={(v) => setZoom(one(v))} aria-label="Board zoom" />
-                    </div>
-                    <Button variant="ghost" size="sm" className="text-muted-foreground" aria-label="Clear all" onClick={clearAll}><Trash2 /><span className="hidden min-[400px]:inline">Clear</span></Button>
-                  </>
-                )}
-              </div>
-            </div>
-
-            <p className="px-1 text-xs text-muted-foreground">
-              {touch ? "Hold and drag ⠿ to reorder. Tap a page to preview." : "Drag cards to reorder pages. Preview shows the real page layout."}
-            </p>
-
-            <Board
-              items={items} settings={settings} zoom={zoom} selected={selected} setItems={setItems}
-              onToggleSelect={(id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })}
-              onRotate={(id, d) => rotate([id], d)}
-              onDuplicate={duplicate}
-              onRemove={(id) => remove([id])}
-              onPreview={setPreviewId}
-              onFiles={addFiles}
-            />
-          </section>
-
-          {/* ── Sidebar ── */}
-          {/* Desktop sidebar (phones use the bottom bar + settings sheet below) */}
-          <aside className="hidden space-y-4 lg:sticky lg:top-20 lg:block lg:self-start">
-            <Card className="gap-4">
-              <CardHeader>
-                <CardTitle>PDF settings</CardTitle>
-                <CardDescription>Changes update the board instantly.</CardDescription>
-              </CardHeader>
-              <CardContent><SettingsPanel s={settings} set={set} /></CardContent>
-            </Card>
-
-            <Card id="img2pdf-result" className="gap-3 py-4">
-              <CardContent className="space-y-3 px-4">
-                {result ? (
-                  <>
-                    <div className="flex items-center gap-3 rounded-lg bg-accent p-3">
-                      <div className="grid size-10 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><FileText className="size-5" /></div>
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold">{result.fileName}</p>
-                        <p className="text-xs text-muted-foreground">{result.kind === "pdf" ? `${result.pages} pages` : `${result.pages} PDFs`} · {formatBytes(result.blob.size)}</p>
-                      </div>
-                    </div>
-                    <Button size="lg" className="h-11 w-full" onClick={download}><Download /> Download {result.kind === "pdf" ? "PDF" : "ZIP"}</Button>
-                    <div className="grid grid-cols-2 gap-2">
-                      {result.kind === "pdf" && <Button variant="outline" onClick={openPdf}><ExternalLink /> Preview</Button>}
-                      <Button variant="outline" className={result.kind === "zip" ? "col-span-2" : ""} onClick={convert}><RefreshCcw /> Rebuild</Button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <Button size="lg" className="h-11 w-full" disabled={busy || loading > 0 || !items.length} onClick={convert}>
-                      {busy ? <><Loader2 className="animate-spin" /> Converting {progress!.done}/{progress!.total}</> : <><FileText /> Convert to PDF</>}
-                    </Button>
-                    {busy && (
-                      <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                        <div className="h-full bg-primary transition-all" style={{ width: `${(progress!.done / progress!.total) * 100}%` }} />
-                      </div>
-                    )}
-                    <p className="flex items-center justify-center gap-1 text-xs text-muted-foreground"><ShieldCheck className="size-3.5" /> Processed locally in your browser</p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          </aside>
-        </div>
-      )}
-
-      {/* ── Phone / tablet bottom bar (portalled to <body> so the page's spacing can't shift it) ── */}
-      {items.length > 0 && createPortal(
-        <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.06)] backdrop-blur lg:hidden">
-          {busy && (
-            <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-muted">
-              <div className="h-full bg-primary transition-all" style={{ width: `${(progress!.done / progress!.total) * 100}%` }} />
-            </div>
-          )}
-          <div className="mx-auto flex max-w-xl items-center gap-2">
-            <Button variant="outline" size="lg" className="h-11 shrink-0 px-3" onClick={() => setSettingsOpen(true)} aria-label="PDF settings">
-              <SlidersHorizontal /><span className="hidden min-[380px]:inline">Settings</span>
-            </Button>
-            {result ? (
+        <ToolGrid
+          title="Image to PDF" settingsLabel="PDF settings" action={action}
+          main={<>
+        <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-card p-2">
+          <div className="flex flex-wrap items-center gap-x-2 px-1 text-sm sm:px-2">
+            <span className="font-semibold">{items.length} page{items.length !== 1 && "s"}</span>
+            <span className="text-muted-foreground">· {formatBytes(totalSize)}</span>
+            {loading > 0 && <span className="inline-flex items-center gap-1 text-muted-foreground"><Loader2 className="size-3.5 animate-spin" /> loading {loading}…</span>}
+          </div>
+          <div className="ml-auto flex flex-wrap items-center gap-2">
+            {selIds.length > 0 ? (
               <>
-                {result.kind === "pdf" && (
-                  <Button variant="outline" size="lg" className="h-11 shrink-0 px-3" onClick={openPdf} aria-label="Open PDF"><ExternalLink /></Button>
-                )}
-                <Button size="lg" className="h-11 min-w-0 flex-1" onClick={download}>
-                  <Download /><span className="truncate">Download {result.kind === "pdf" ? "PDF" : "ZIP"}</span>
-                  <span className="hidden text-xs font-normal opacity-80 min-[420px]:inline">{formatBytes(result.blob.size)}</span>
-                </Button>
+                <Badge variant="outline">{selIds.length} selected</Badge>
+                <Button variant="outline" size="sm" aria-label="Rotate left" onClick={() => rotate(selIds, -1)}><RotateCcw /><span className="hidden sm:inline">Left</span></Button>
+                <Button variant="outline" size="sm" aria-label="Rotate right" onClick={() => rotate(selIds, 1)}><RotateCw /><span className="hidden sm:inline">Right</span></Button>
+                <Button variant="outline" size="sm" className="text-destructive" onClick={() => remove(selIds)}><Trash2 /> Delete</Button>
+                <Button variant="ghost" size="icon" aria-label="Clear selection" onClick={() => setSelected(new Set())}><X /></Button>
               </>
             ) : (
-              <Button size="lg" className="h-11 min-w-0 flex-1" disabled={busy || loading > 0} onClick={convert}>
-                {busy
-                  ? <><Loader2 className="animate-spin" /> {progress!.done}/{progress!.total}</>
-                  : <><FileText /><span className="truncate">Convert {items.length} to PDF</span></>}
-              </Button>
+              <>
+                <Select value={null} onValueChange={(v) => { if (v) sortBy(v as string) }}>
+                  <SelectTrigger size="sm" className="w-[120px]"><ArrowDownUp className="size-4" /><SelectValue placeholder="Sort" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="name-asc"><ArrowDownAZ className="size-4" /> Name A→Z</SelectItem>
+                    <SelectItem value="name-desc"><ArrowUpAZ className="size-4" /> Name Z→A</SelectItem>
+                    <SelectItem value="date"><CalendarClock className="size-4" /> Date modified</SelectItem>
+                    <SelectItem value="size"><HardDrive className="size-4" /> Largest first</SelectItem>
+                    <SelectItem value="reverse"><ArrowDownUp className="size-4" /> Reverse order</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" size="sm" onClick={() => setSelected(new Set(items.map((i) => i.id)))}><CheckSquare /><span className="hidden min-[400px]:inline">Select all</span></Button>
+                <div className="hidden items-center gap-2 pl-1 sm:flex">
+                  <ZoomIn className="size-4 text-muted-foreground" />
+                  <Slider className="w-24" value={[zoom]} min={130} max={320} step={10} onValueChange={(v) => setZoom(one(v))} aria-label="Board zoom" />
+                </div>
+                <Button variant="ghost" size="sm" className="text-muted-foreground" aria-label="Clear all" onClick={clearAll}><Trash2 /><span className="hidden min-[400px]:inline">Clear</span></Button>
+              </>
             )}
           </div>
-        </div>,
-        document.body,
-      )}
+        </div>
 
-      {/* ── Settings bottom sheet (phones / tablets) ── */}
-      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="top-auto bottom-0 left-0 max-h-[88dvh] w-full max-w-full translate-x-0 translate-y-0 gap-3 overflow-y-auto rounded-t-2xl rounded-b-none border-b-0 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:max-w-full lg:hidden">
-          <div className="mx-auto -mt-1 h-1.5 w-10 rounded-full bg-muted" aria-hidden />
-          <DialogTitle>PDF settings</DialogTitle>
-          <DialogDescription className="-mt-2">Changes update the pages instantly.</DialogDescription>
-          <SettingsPanel s={settings} set={set} />
-          <Button size="lg" className="h-11 w-full" onClick={() => setSettingsOpen(false)}>Done</Button>
-        </DialogContent>
-      </Dialog>
+        <p className="px-1 text-xs text-muted-foreground">
+          {touch ? "Hold and drag ⠿ to reorder. Tap a page to preview." : "Drag cards to reorder pages. Preview shows the real page layout."}
+        </p>
+
+        <Board
+          items={items} settings={settings} zoom={zoom} selected={selected} setItems={setItems}
+          onToggleSelect={(id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })}
+          onRotate={(id, d) => rotate([id], d)}
+          onDuplicate={duplicate}
+          onRemove={(id) => remove([id])}
+          onPreview={setPreviewId}
+          onFiles={addFiles}
+        />
+          </>}
+          side={<>
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">Changes update the pages instantly.</p>
+              <SettingsPanel s={settings} set={set} />
+            </div>
+            {result && (
+              <div className="flex items-center gap-3 rounded-lg bg-accent p-3">
+                <div className="grid size-10 shrink-0 place-items-center rounded-md bg-primary text-primary-foreground"><FileText className="size-5" /></div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold">{result.fileName}</p>
+                  <p className="text-xs text-muted-foreground">{result.kind === "pdf" ? `${result.pages} pages` : `${result.pages} PDFs`} · {formatBytes(result.blob.size)}</p>
+                </div>
+              </div>
+            )}
+          </>}
+        />
+      )}
 
       {/* ── Single page preview ── */}
       <Dialog open={!!previewItem} onOpenChange={(o) => !o && setPreviewId(null)}>
