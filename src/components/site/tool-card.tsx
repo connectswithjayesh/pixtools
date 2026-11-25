@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
-import type { Tool } from "@/lib/tools"
+import { toolHref, type Tool } from "@/lib/tools"
 import { cn } from "@/lib/utils"
 
 const TINT = {
@@ -13,7 +13,7 @@ export function ToolCard({ tool, className }: { tool: Tool; className?: string }
   const Icon = tool.icon
   return (
     <Link
-      href={`/${tool.slug}`}
+      href={toolHref(tool.slug)}
       className={cn(
         "group relative flex gap-3 rounded-xl border bg-card p-4 shadow-xs transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none",
         className,

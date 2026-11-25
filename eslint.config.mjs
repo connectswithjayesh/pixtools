@@ -13,7 +13,7 @@ const eslintConfig = defineConfig([
   },
   {
     // tools show blob:/data: images made in the browser, which next/image cannot optimise
-    files: ["src/tools/**"],
+    files: ["src/app/tools/**"],
     rules: { "@next/next/no-img-element": "off" },
   },
   // Override default ignores of eslint-config-next.
