@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import "@fontsource-variable/plus-jakarta-sans";
+import "@fontsource-variable/inter";
+import "@fontsource-variable/space-grotesk";
 import "@fontsource-variable/jetbrains-mono";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,14 +16,14 @@ export const metadata: Metadata = {
   title: { default: `${SITE.name} – Free Image, PDF & Text Tools Online`, template: `%s | ${SITE.name}` },
   description: "Free online image, PDF and text tools that run in your browser: compress, convert, merge, split, count words and more. No upload, no sign-up.",
   applicationName: SITE.name,
-  openGraph: { siteName: SITE.name, type: "website" },
+  openGraph: { siteName: SITE.name, type: "website", images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }] },
   alternates: { canonical: "/" },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#d91a2a" },
-    { media: "(prefers-color-scheme: dark)", color: "#161a22" },
+    { media: "(prefers-color-scheme: light)", color: "#4338CA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0B1020" },
   ],
 };
 

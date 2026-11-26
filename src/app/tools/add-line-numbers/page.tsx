@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Add Line Numbers to Text Online",
     description: "Add line numbers in any format — 1. 1) [1] 01 — with a custom start and step, or remove existing line numbers.",
     url: "/tools/add-line-numbers",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

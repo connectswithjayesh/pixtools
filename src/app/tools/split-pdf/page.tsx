@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Split PDF – Extract Pages from PDF Online",
     description: "Extract selected pages, split by custom ranges, every N pages, or into single pages.",
     url: "/tools/split-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

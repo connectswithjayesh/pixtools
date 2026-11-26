@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Watermark PDF – Add Text or Logo to PDF",
     description: "Add a text watermark to all or selected PDF pages with opacity, angle, size, color and tiling.",
     url: "/tools/watermark-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

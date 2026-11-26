@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Add Page Numbers to PDF Online Free",
     description: "Add page numbers to a PDF with position, format, starting number, font size and color options.",
     url: "/tools/pdf-page-numbers",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

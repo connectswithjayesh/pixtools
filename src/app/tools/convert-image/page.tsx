@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Convert Image – JPG to PNG, PNG to WEBP & More",
     description: "Convert images between JPG, PNG and WEBP in bulk, with quality and background options.",
     url: "/tools/convert-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

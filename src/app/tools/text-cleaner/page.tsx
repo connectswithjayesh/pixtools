@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Text Cleaner – Remove HTML, Links & Symbols",
     description: "Clean messy text: strip HTML tags, decode entities, remove links, emails, emoji, numbers, special characters and invisible characters.",
     url: "/tools/text-cleaner",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

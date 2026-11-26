@@ -4,10 +4,11 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
-import { LayoutGrid, Menu, Moon, Sun, Wrench, X } from "lucide-react"
+import { LayoutGrid, Menu, Moon, Sun, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { CATEGORIES, toolHref, toolsIn, type Category } from "@/lib/tools"
 import { SITE } from "@/lib/site"
+import { Logo } from "@/components/site/logo"
 import { cn } from "@/lib/utils"
 
 const CATS = Object.keys(CATEGORIES) as Category[]
@@ -42,11 +43,8 @@ export function SiteHeader() {
     <>
       <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-backdrop-filter:bg-background/70">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <Wrench className="size-4" />
-            </span>
-            {SITE.name}
+          <Link href="/" aria-label={`${SITE.name} home`} className="flex items-center">
+            <Logo />
           </Link>
           <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Tool categories">
             {CATS.map((c) => (

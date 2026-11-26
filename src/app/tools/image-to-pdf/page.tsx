@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Image to PDF Converter – JPG & PNG to PDF Free",
     description: "Arrange images on a drag-and-drop board, rotate them, choose page size and margins, and download a PDF.",
     url: "/tools/image-to-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

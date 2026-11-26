@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "PDF to JPG & PNG Converter Online Free",
     description: "Turn every PDF page, or the pages you choose, into high-quality JPG or PNG images.",
     url: "/tools/pdf-to-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

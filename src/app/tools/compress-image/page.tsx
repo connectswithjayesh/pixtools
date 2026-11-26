@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Compress Image – Reduce JPG & PNG Size in KB",
     description: "Reduce image file size by quality or to an exact target size in KB, with batch support.",
     url: "/tools/compress-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

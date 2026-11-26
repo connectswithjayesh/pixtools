@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Image Optimizer – Compress to WebP, AVIF, MozJPEG",
     description: "Squeeze images with MozJPEG, WebP, AVIF, JPEG XL and OxiPNG. Compare two versions side by side with zoom, resize and reduce colours — all in your browser.",
     url: "/tools/image-optimizer",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

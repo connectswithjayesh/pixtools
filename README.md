@@ -89,6 +89,16 @@ Every tool file has its own copy of a small `ToolGrid` layout (no shared tool co
    and render `<MyTool />` inside `<ToolPageLayout slug="my-tool" …>`.
 3. Add an entry to `TOOLS` in `src/lib/tools.ts` (slug, name, short, description, category, icon) so it shows in menus, cards and the sitemap.
 
+## Theme and logo
+
+- Colours live in `src/app/globals.css`: indigo `#4338CA` (primary) and saffron `#F59E0B` (highlights: `bg-saffron`, `text-saffron-text`),
+  plus one colour per section for tags and labels (`text-section-blog`, `bg-section-news-soft`, …: tools, blog, tutorials, news, generators). Light and dark values are both there.
+- Fonts: Inter (text) and Space Grotesk (headings, `font-heading`), self-hosted via Fontsource.
+- Logo: the "flowing t" mark. Component `src/components/site/logo.tsx` (`Logo`, `LogoMark`, `LogoWordmark`).
+- Icons: `src/app/icon.svg` and `favicon.ico` (browser tab), `apple-icon.png` (iPhone), `manifest.ts` with `public/icons/*` (Android, install, maskable),
+  share image `public/og.png` (1200×630, on every page's Open Graph).
+- Brand files to download and reuse: `public/brand/` (logo light/dark, stacked, icon PNG/SVG, round avatar).
+
 ## Notes
 
 - **WebAssembly:** PDF rendering (pdf.js), password protect/unlock (qpdf) and the Image Optimizer codecs (jSquash) run as WebAssembly in the browser.

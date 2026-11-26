@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Merge PDF – Combine PDF Files into One Free",
     description: "Combine multiple PDF files into one. Drag to set the order before merging.",
     url: "/tools/merge-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

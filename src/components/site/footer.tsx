@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { CATEGORIES, toolHref, toolsIn, type Category } from "@/lib/tools"
 import { SITE } from "@/lib/site"
+import { Logo } from "@/components/site/logo"
 
 export function SiteFooter() {
   return (
     <footer className="border-t bg-card/50">
       <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <p className="font-semibold">{SITE.name}</p>
+          <Logo />
           <p className="mt-2 text-sm text-muted-foreground">{SITE.tagline}. Your files and text are processed on your device and never uploaded.</p>
         </div>
         {(Object.keys(CATEGORIES) as Category[]).map((c) => (

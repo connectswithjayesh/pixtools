@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Find and Replace Text Online (with Regex)",
     description: "Find and replace text with match case, whole words and regular expressions, and see every match highlighted.",
     url: "/tools/find-and-replace",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

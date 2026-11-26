@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Word Counter – Count Words & Characters Online",
     description: "Count words, characters, sentences and paragraphs as you type, with reading time, speaking time and top keywords. Works with Marathi and Hindi.",
     url: "/tools/word-counter",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

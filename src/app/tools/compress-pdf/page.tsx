@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Compress PDF – Reduce PDF File Size Online",
     description: "Shrink PDF files for email, WhatsApp and upload forms — lossless optimisation or strong image compression.",
     url: "/tools/compress-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

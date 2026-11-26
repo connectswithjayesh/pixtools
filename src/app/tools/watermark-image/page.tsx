@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Watermark Image – Add Text or Logo to Photos",
     description: "Stamp text or your logo on images with position, size, opacity, rotation and tiling controls.",
     url: "/tools/watermark-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

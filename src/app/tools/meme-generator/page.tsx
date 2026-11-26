@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Meme Generator – Add Text to Images Free",
     description: "Add classic meme text or custom captions to any image, with font, color, outline and position controls.",
     url: "/tools/meme-generator",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 
