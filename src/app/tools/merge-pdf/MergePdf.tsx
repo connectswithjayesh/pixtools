@@ -439,7 +439,7 @@ function MergePdfTool() {
         }
       }
       out.setTitle(name || "merged")
-      out.setProducer("PixTools")
+      out.setProducer("TechSutraHub")
       const blob = await pdfBytesToBlob(out)
       setResult(blob)
       toast.success(`Merged ${out.getPageCount()} pages`)

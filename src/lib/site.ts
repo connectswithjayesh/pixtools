@@ -3,14 +3,14 @@
  * Edit this one file before deploying.
  */
 export const SITE = {
-  name: "PixTools",
+  name: "TechSutraHub",
   tagline: "Free image, PDF & text tools that run in your browser",
   /** Your live domain, no trailing slash — used for the sitemap, canonical URLs and policy pages */
-  url: "https://www.example.com",
+  url: "https://www.techsutrahub.com",
   /** Contact email shown on the Contact and Privacy pages */
-  email: "contact@example.com",
+  email: "contact@techsutrahub.com",
   /** Owner or company name shown on legal pages */
-  owner: "PixTools",
+  owner: "TechSutraHub",
   /** Country/state whose law applies (Terms page) */
   jurisdiction: "Maharashtra, India",
 

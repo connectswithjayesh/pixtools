@@ -86,7 +86,7 @@ export default function HomePage() {
 
       <section aria-labelledby="why" className="rounded-2xl border bg-card p-6 sm:p-10">
         <h2 id="why" className="text-center text-xl font-semibold sm:text-2xl">
-          Why use PixTools?
+          Why use TechSutraHub?
         </h2>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {WHY.map((w) => (
