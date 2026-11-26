@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Word Frequency Counter & Keyword Density",
     description: "Find the most used words and 2–3 word phrases with count and keyword density, skip common words, and export to CSV.",
     url: "/tools/word-frequency",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

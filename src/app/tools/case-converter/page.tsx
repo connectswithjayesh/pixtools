@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Case Converter – UPPER, lower, Title Case & more",
     description: "Change text to UPPER CASE, lower case, Title Case, Sentence case, camelCase, snake_case, kebab-case and more in one click.",
     url: "/tools/case-converter",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

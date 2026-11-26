@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Character Counter – With & Without Spaces",
     description: "Count characters with and without spaces and check limits for X (Twitter), meta titles, Instagram, YouTube and SMS.",
     url: "/tools/character-counter",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Sort Lines Alphabetically – A to Z Sorter",
     description: "Sort lines alphabetically, naturally, by number, length or word count, in any order — or shuffle them randomly.",
     url: "/tools/sort-lines",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

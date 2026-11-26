@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Sign PDF Online – Add Signature to PDF Free",
     description: "Sign PDF documents online: draw, type or upload your signature, add the date, and place them anywhere on any page.",
     url: "/tools/sign-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Image to Base64 Converter & Decoder",
     description: "Convert images to Base64 data URIs, CSS or HTML snippets, and decode Base64 back to an image.",
     url: "/tools/image-to-base64",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

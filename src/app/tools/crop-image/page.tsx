@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Crop Image Online – Free Photo Cropper",
     description: "Crop an image freely or to fixed ratios like 1:1, 4:3, 16:9 and 9:16, with exact pixel output.",
     url: "/tools/crop-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

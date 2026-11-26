@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Reverse Text Generator – Backwards & Upside Down",
     description: "Reverse text backwards, reverse word order, reverse each word, flip line order or make upside-down text.",
     url: "/tools/reverse-text",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Protect PDF – Add Password to PDF (AES-256)",
     description: "Encrypt a PDF with AES-256 password protection and control printing, copying and editing permissions.",
     url: "/tools/protect-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

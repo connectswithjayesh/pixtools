@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Organize PDF – Reorder, Rotate & Delete Pages",
     description: "Rearrange pages on a drag-and-drop board, rotate, duplicate or delete pages, and add pages from other PDFs.",
     url: "/tools/organize-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

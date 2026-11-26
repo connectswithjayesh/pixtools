@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Remove Duplicate Lines Online",
     description: "Remove duplicate lines from lists, keep the first or last copy, ignore case or spaces, or show only the duplicated lines.",
     url: "/tools/remove-duplicate-lines",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

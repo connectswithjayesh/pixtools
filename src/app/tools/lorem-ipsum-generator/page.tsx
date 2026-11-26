@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Lorem Ipsum Generator – Latin, Marathi & Hindi",
     description: "Generate Lorem Ipsum placeholder paragraphs, sentences, words or lists — plus Marathi and Hindi dummy text, with optional HTML tags.",
     url: "/tools/lorem-ipsum-generator",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

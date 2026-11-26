@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Remove Extra Spaces from Text Online",
     description: "Remove extra spaces, tabs and blank lines, trim every line and fix spacing around punctuation.",
     url: "/tools/remove-extra-spaces",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

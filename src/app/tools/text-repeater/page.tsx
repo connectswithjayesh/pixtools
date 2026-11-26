@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Text Repeater – Repeat Text Many Times",
     description: "Repeat any word or message up to 1,00,000 times with new lines, spaces, commas or a custom separator, and optional numbering.",
     url: "/tools/text-repeater",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

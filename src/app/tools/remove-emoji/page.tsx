@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Emoji Remover – Remove Emoji from Text",
     description: "Remove every emoji from text, including flags, skin tones and family emoji, while keeping Marathi, Hindi and normal symbols.",
     url: "/tools/remove-emoji",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

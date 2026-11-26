@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Unlock PDF – Remove PDF Password Online",
     description: "Remove the password and printing/copying restrictions from a PDF you own.",
     url: "/tools/unlock-pdf",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

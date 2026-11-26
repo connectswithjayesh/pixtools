@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Rotate & Flip Image Online Free",
     description: "Rotate images left, right or by any angle, and flip horizontally or vertically — one or many at once.",
     url: "/tools/rotate-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Remove Line Breaks – Fix PDF Copied Text",
     description: "Remove line breaks from text copied from PDFs and emails, keep paragraphs, and fix words split with hyphens.",
     url: "/tools/remove-line-breaks",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

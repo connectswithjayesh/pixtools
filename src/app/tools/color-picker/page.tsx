@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Image Color Picker – Get HEX & RGB from Photo",
     description: "Click anywhere on an image to get HEX, RGB and HSL values, and extract its main color palette.",
     url: "/tools/color-picker",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 

@@ -10,6 +10,7 @@ export const metadata: Metadata = {
     title: "Resize Image – Change Width & Height in Pixels",
     description: "Resize images by exact pixels or percentage, keep the aspect ratio, or use social-media presets.",
     url: "/tools/resize-image",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "TechSutraHub" }],
   },
 }
 
