@@ -1,6 +1,7 @@
-# PixTools
+# TechSutraHub
 
-Free online image, PDF and text tools that run entirely in the browser — files are never uploaded.
+Free online tools (image, PDF, text) that run entirely in the browser — files are never uploaded. Blog, tutorials and news will follow.
+Live at https://www.techsutrahub.com
 Built with Next.js 16 (App Router, Turbopack), React 19, Tailwind CSS 4 and shadcn/ui (`base-nova`, Base UI).
 
 ## Run it
@@ -16,7 +17,7 @@ npm start          # serve the production build
 
 | Setting | What to put |
 |---|---|
-| `url` | Your live domain, e.g. `https://www.pixtools.in` (used by the sitemap, canonical URLs and policy pages) |
+| `url` | Your live domain, e.g. `https://www.techsutrahub.com` (used by the sitemap, canonical URLs and policy pages) |
 | `email`, `owner`, `jurisdiction` | Shown on Contact, Privacy Policy and Terms |
 | `ads.client` | Your AdSense publisher ID, e.g. `ca-pub-1234567890123456`. Empty → grey "Ad space" placeholders |
 | `ads.slots` | Ad unit IDs for `top`, `inContent`, `sidebar`, `bottom` |

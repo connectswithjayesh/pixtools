@@ -274,7 +274,7 @@ const MAX_FILE = 20 * 1024 * 1024
 /** Text state that survives a reload (per tool). localStorage can be missing or full, so every access is guarded. */
 function useTextDraft(initial = "") {
   const slug = usePathname()?.replace(/^\//, "") || "text"
-  const key = `pixtools:text:${slug}`
+  const key = `techsutrahub:text:${slug}`
   const [text, setText] = useState(() => {
     try { return localStorage.getItem(key) ?? initial } catch { return initial }
   })
