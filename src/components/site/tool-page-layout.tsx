@@ -2,7 +2,7 @@ import Link from "next/link"
 import { CheckCircle2, ShieldCheck } from "lucide-react"
 import { AdSlot } from "@/components/site/ad-slot"
 import { ToolCard } from "@/components/site/tool-card"
-import { CATEGORIES, toolBySlug, toolsIn } from "@/lib/tools"
+import { CATEGORIES, toolBySlug, toolsIn, categoryHref, toolHref } from "@/lib/tools"
 import { SITE } from "@/lib/site"
 
 export interface Faq { q: string; a: string }
@@ -29,7 +29,7 @@ export function ToolPageLayout({ slug, title, lead, steps, intro, features, uses
   const cat = CATEGORIES[tool.category]
   const related = toolsIn(tool.category).filter((t) => t.slug !== slug).slice(0, 4)
   const Icon = tool.icon
-  const url = `${SITE.url}/tools/${slug}`
+  const url = `${SITE.url}${toolHref(slug)}`
 
   return (
     <div className="space-y-10">
@@ -37,7 +37,8 @@ export function ToolPageLayout({ slug, title, lead, steps, intro, features, uses
         <div>
           <nav aria-label="Breadcrumb" className="mb-3 text-sm text-muted-foreground lg:mb-2">
             <Link href="/" className="hover:text-foreground">Home</Link>
-            {" / "}<Link href={`/${cat.slug}`} className="hover:text-foreground">{cat.name}</Link>
+            {" / "}<Link href="/tools" className="hover:text-foreground">Tools</Link>
+            {" / "}<Link href={categoryHref(cat)} className="hover:text-foreground">{cat.name}</Link>
             {" / "}<span className="text-foreground">{title}</span>
           </nav>
           <div className="flex items-start gap-4 lg:items-center lg:gap-3">
@@ -134,8 +135,9 @@ export function ToolPageLayout({ slug, title, lead, steps, intro, features, uses
               "@context": "https://schema.org", "@type": "BreadcrumbList",
               itemListElement: [
                 { "@type": "ListItem", position: 1, name: "Home", item: `${SITE.url}/` },
-                { "@type": "ListItem", position: 2, name: cat.name, item: `${SITE.url}/${cat.slug}` },
-                { "@type": "ListItem", position: 3, name: tool.name, item: url },
+                { "@type": "ListItem", position: 2, name: "Tools", item: `${SITE.url}/tools` },
+                { "@type": "ListItem", position: 3, name: cat.name, item: `${SITE.url}${categoryHref(cat)}` },
+                { "@type": "ListItem", position: 4, name: tool.name, item: url },
               ],
             },
             {

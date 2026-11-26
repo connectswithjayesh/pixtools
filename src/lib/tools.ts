@@ -1,6 +1,6 @@
 /**
  * Tool catalogue: names, text and icons for every tool and category.
- * Each tool lives in its own folder, src/app/tools/<slug>/: page.tsx (server: metadata, content, FAQ)
+ * Each tool lives in its own folder, src/app/tools/<category>/<slug>/: page.tsx (server: metadata, content, FAQ)
  * and <Tool>.tsx (client: the tool itself).
  */
 import {
@@ -30,17 +30,17 @@ export interface Tool {
 
 export const CATEGORIES: Record<Category, CategoryInfo> = {
   image: {
-    key: "image", slug: "image-tools", name: "Image Tools", icon: ImageIcon,
+    key: "image", slug: "image", name: "Image Tools", icon: ImageIcon,
     blurb: "Compress, resize, convert, crop and edit images.",
     description: "Free online image tools: compress JPG and PNG, resize for social media, convert to WEBP or AVIF, crop, rotate, add watermarks and more — right in your browser.",
   },
   pdf: {
-    key: "pdf", slug: "pdf-tools", name: "PDF Tools", icon: Files,
+    key: "pdf", slug: "pdf", name: "PDF Tools", icon: Files,
     blurb: "Merge, split, organize and edit PDF files.",
     description: "Free online PDF tools: merge and split PDFs, reorder pages, convert PDF to images, add page numbers and watermarks, sign, compress and password-protect — without uploading your files.",
   },
   text: {
-    key: "text", slug: "text-tools", name: "Text Tools", icon: Type,
+    key: "text", slug: "text", name: "Text Tools", icon: Type,
     blurb: "Count, convert, clean and format text — English, मराठी and हिंदी.",
     description: "Free online text tools: word and character counter, case converter, remove duplicate lines, sort lines, find and replace, text cleaner, keyword density and more. Works with Marathi and Hindi.",
   },
@@ -229,9 +229,16 @@ export const TOOLS: Tool[] = [
   },
 ]
 
-/** URL of a tool page */
-export const toolHref = (slug: string) => `/tools/${slug}`
-
 export const toolBySlug = (slug: string) => TOOLS.find((t) => t.slug === slug)
+
+/** URL of a category page: /tools/<category> */
+export const categoryHref = (c: Category | CategoryInfo) => `/tools/${typeof c === "string" ? CATEGORIES[c].slug : c.slug}`
+
+/** URL of a tool page: /tools/<category>/<tool> */
+export const toolHref = (slug: string) => {
+  const tool = toolBySlug(slug)
+  if (!tool) throw new Error(`Unknown tool slug: ${slug}`)
+  return `${categoryHref(tool.category)}/${slug}`
+}
 export const toolsIn = (c: Category) => TOOLS.filter((t) => t.category === c)
 export const categoryBySlug = (slug: string) => Object.values(CATEGORIES).find((c) => c.slug === slug)

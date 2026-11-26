@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { AdSlot } from "@/components/site/ad-slot"
 import { ToolCard } from "@/components/site/tool-card"
-import { CATEGORIES, toolHref, toolsIn, type CategoryInfo } from "@/lib/tools"
+import { CATEGORIES, toolHref, toolsIn, type CategoryInfo, categoryHref } from "@/lib/tools"
 import { SITE } from "@/lib/site"
 
 function Breadcrumb({ items }: { items: { name: string; href?: string }[] }) {
@@ -15,14 +15,14 @@ function Breadcrumb({ items }: { items: { name: string; href?: string }[] }) {
   )
 }
 
-/** Category page body (/image-tools, /pdf-tools, /text-tools). Each category page.tsx owns its metadata. */
+/** Category page body (/tools/image, /tools/pdf, /tools/text). Each category page.tsx owns its metadata. */
 export function CategoryView({ cat }: { cat: CategoryInfo }) {
   const tools = toolsIn(cat.key)
   const Icon = cat.icon
   return (
     <div className="space-y-8">
       <div>
-        <Breadcrumb items={[{ name: cat.name }]} />
+        <Breadcrumb items={[{ name: "Tools", href: "/tools" }, { name: cat.name }]} />
         <div className="flex items-start gap-4">
           <span className="hidden size-12 shrink-0 place-items-center rounded-xl bg-primary text-primary-foreground sm:grid"><Icon className="size-6" /></span>
           <div>
@@ -38,14 +38,14 @@ export function CategoryView({ cat }: { cat: CategoryInfo }) {
         <h2 className="mb-4 text-xl font-semibold">Other categories</h2>
         <div className="flex flex-wrap gap-2">
           {Object.values(CATEGORIES).filter((c) => c.key !== cat.key).map((c) => (
-            <Link key={c.key} href={`/${c.slug}`} className="rounded-full border bg-card px-4 py-2 text-sm font-medium hover:border-primary/40 hover:text-primary">{c.name}</Link>
+            <Link key={c.key} href={categoryHref(c)} className="rounded-full border bg-card px-4 py-2 text-sm font-medium hover:border-primary/40 hover:text-primary">{c.name}</Link>
           ))}
         </div>
       </section>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify({
-        "@context": "https://schema.org", "@type": "CollectionPage", name: cat.name, description: cat.description, url: `${SITE.url}/${cat.slug}`,
+        "@context": "https://schema.org", "@type": "CollectionPage", name: cat.name, description: cat.description, url: `${SITE.url}${categoryHref(cat)}`,
         hasPart: tools.map((t) => ({ "@type": "WebApplication", name: t.name, url: `${SITE.url}${toolHref(t.slug)}` })),
       }).replace(/</g, "\\u003c") }}
       />

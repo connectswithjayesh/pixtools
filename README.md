@@ -36,7 +36,7 @@ npm start          # serve the production build
 
 Every tool page has: its own meta title and description, H1, ads (top, in-content, bottom), the tool, "how to use" steps,
 about/features/uses content, FAQ, related tools, and JSON-LD (WebApplication, HowTo, BreadcrumbList, FAQPage).
-Old root URLs such as `/merge-pdf` redirect permanently to `/tools/merge-pdf` (`next.config.ts`).
+Old URLs such as `/merge-pdf` or `/tools/merge-pdf` redirect permanently to `/tools/pdf/merge-pdf` (`next.config.ts`).
 
 ## Tools (36)
 
@@ -50,10 +50,10 @@ Old root URLs such as `/merge-pdf` redirect permanently to `/tools/merge-pdf` (`
 src/
   app/
     page.tsx                      home
-    tools/page.tsx                all tools
-    tools/<slug>/page.tsx         one tool page (server): metadata, steps, intro, features, uses, FAQ
-    tools/<slug>/<Tool>.tsx       the tool itself ("use client"): UI, logic and helpers in one file
-    image-tools/ pdf-tools/ text-tools/   category pages
+    tools/page.tsx                          all tools                  → /tools
+    tools/<category>/page.tsx               category page              → /tools/image, /tools/pdf, /tools/text
+    tools/<category>/<slug>/page.tsx        one tool page (server): metadata, steps, intro, features, uses, FAQ
+    tools/<category>/<slug>/<Tool>.tsx      the tool itself ("use client"): UI, logic and helpers in one file
     about/ contact/ privacy-policy/ terms/, sitemap.ts, robots.ts, ads.txt/
   components/site/                header, footer, ad slot, tool card, tool page layout, category view, theme
   components/ui/                  shadcn/ui primitives (Base UI)
@@ -64,9 +64,11 @@ src/
 Example:
 
 ```
-src/app/tools/pdf-to-image/
+src/app/tools/pdf/pdf-to-image/        → www.techsutrahub.com/tools/pdf/pdf-to-image
   page.tsx         ← metadata, content, FAQ (server component)
   PdfToImage.tsx   ← the tool (client component)
+
+Old URLs (`/merge-pdf`, `/tools/merge-pdf`, `/pdf-tools`, `/tool`) redirect permanently to the new ones (`next.config.ts`).
 ```
 
 ### Tool layout
@@ -83,9 +85,9 @@ Every tool file has its own copy of a small `ToolGrid` layout (no shared tool co
 
 ### Adding a tool
 
-1. Create `src/app/tools/my-tool/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file
+1. Create `src/app/tools/<category>/my-tool/MyTool.tsx` with `"use client"` and a default-exported component. Keep all its code in that file
    (copy `ToolGrid` from any other tool for the layout).
-2. Create `src/app/tools/my-tool/page.tsx` (copy any other tool's page): set `metadata`, `steps`, `intro`, `features`, `uses`, `faq`,
+2. Create `src/app/tools/<category>/my-tool/page.tsx` (copy any other tool's page; canonical and Open Graph `url` = `/tools/<category>/my-tool`): set `metadata`, `steps`, `intro`, `features`, `uses`, `faq`,
    and render `<MyTool />` inside `<ToolPageLayout slug="my-tool" …>`.
 3. Add an entry to `TOOLS` in `src/lib/tools.ts` (slug, name, short, description, category, icon) so it shows in menus, cards and the sitemap.
 
