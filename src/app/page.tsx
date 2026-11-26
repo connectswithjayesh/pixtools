@@ -4,7 +4,7 @@ import { ArrowRight, Infinity as InfinityIcon, ShieldCheck, Smartphone, Zap } fr
 import { AdSlot } from "@/components/site/ad-slot"
 import { HomeSearch } from "@/components/site/home-search"
 import { ToolCard } from "@/components/site/tool-card"
-import { CATEGORIES, TOOLS, toolBySlug, toolsIn, type Category } from "@/lib/tools"
+import { CATEGORIES, TOOLS, toolBySlug, toolsIn, type Category, categoryHref } from "@/lib/tools"
 
 export const metadata: Metadata = { alternates: { canonical: "/" } }
 
@@ -68,7 +68,7 @@ export default function HomePage() {
                         <p className="text-sm text-muted-foreground sm:text-base">{cat.blurb}</p>
                       </div>
                     </div>
-                    <Link href={`/${cat.slug}`} className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline">
+                    <Link href={categoryHref(cat)} className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-primary hover:underline">
                       View all <ArrowRight className="size-4" />
                     </Link>
                   </div>

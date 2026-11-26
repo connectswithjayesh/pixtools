@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CATEGORIES, toolHref, toolsIn, type Category } from "@/lib/tools"
+import { CATEGORIES, toolHref, toolsIn, type Category, categoryHref } from "@/lib/tools"
 import { SITE } from "@/lib/site"
 import { Logo } from "@/components/site/logo"
 
@@ -13,7 +13,7 @@ export function SiteFooter() {
         </div>
         {(Object.keys(CATEGORIES) as Category[]).map((c) => (
           <div key={c}>
-            <Link href={`/${CATEGORIES[c].slug}`} className="text-sm font-semibold hover:text-primary">{CATEGORIES[c].name}</Link>
+            <Link href={categoryHref(c)} className="text-sm font-semibold hover:text-primary">{CATEGORIES[c].name}</Link>
             <ul className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-muted-foreground">
               {toolsIn(c).map((t) => <li key={t.slug}><Link href={toolHref(t.slug)} className="hover:text-foreground">{t.name}</Link></li>)}
             </ul>

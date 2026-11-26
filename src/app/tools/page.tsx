@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { AdSlot } from "@/components/site/ad-slot"
 import { ToolCard } from "@/components/site/tool-card"
-import { CATEGORIES, TOOLS, toolsIn, type Category } from "@/lib/tools"
+import { CATEGORIES, TOOLS, toolsIn, type Category, categoryHref } from "@/lib/tools"
 
 export const metadata: Metadata = {
   title: "All Tools – Free Image, PDF & Text Tools",
@@ -33,7 +33,7 @@ export default function AllToolsPage() {
           <section id={c} className="scroll-mt-20">
             <div className="mb-4 flex items-end justify-between gap-4">
               <h2 className="text-xl font-semibold sm:text-2xl">{CATEGORIES[c].name}</h2>
-              <Link href={`/${CATEGORIES[c].slug}`} className="text-sm font-medium text-primary hover:underline">Open category →</Link>
+              <Link href={categoryHref(c)} className="text-sm font-medium text-primary hover:underline">Open category →</Link>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{toolsIn(c).map((t) => <ToolCard key={t.slug} tool={t} />)}</div>
           </section>

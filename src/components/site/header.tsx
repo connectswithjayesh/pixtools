@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation"
 import { useTheme } from "next-themes"
 import { LayoutGrid, Menu, Moon, Sun, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { CATEGORIES, toolHref, toolsIn, type Category } from "@/lib/tools"
+import { CATEGORIES, toolHref, toolsIn, type Category, categoryHref } from "@/lib/tools"
 import { SITE } from "@/lib/site"
 import { Logo } from "@/components/site/logo"
 import { cn } from "@/lib/utils"
@@ -33,10 +33,12 @@ export function SiteHeader() {
   }, [open])
 
   const active = (href: string) => pathname === href
-  const nav = (href: string) =>
+  // a category tab stays highlighted on its tool pages (/tools/image/…)
+  const inSection = (href: string) => pathname === href || pathname.startsWith(`${href}/`)
+  const nav = (href: string, section = false) =>
     cn(
       "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
-      active(href) ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
+      (section ? inSection(href) : active(href)) ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground",
     )
 
   return (
@@ -48,7 +50,7 @@ export function SiteHeader() {
           </Link>
           <nav className="ml-4 hidden items-center gap-1 md:flex" aria-label="Tool categories">
             {CATS.map((c) => (
-              <Link key={c} href={`/${CATEGORIES[c].slug}`} className={nav(`/${CATEGORIES[c].slug}`)}>
+              <Link key={c} href={categoryHref(c)} className={nav(categoryHref(c), true)}>
                 {CATEGORIES[c].name}
               </Link>
             ))}
@@ -87,7 +89,7 @@ export function SiteHeader() {
           </Link>
           {CATS.map((c) => (
             <div key={c} className="mb-5">
-              <Link href={`/${CATEGORIES[c].slug}`} className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+              <Link href={categoryHref(c)} className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
                 {CATEGORIES[c].name}
               </Link>
               <div className="mt-2 grid grid-cols-2 gap-1">
